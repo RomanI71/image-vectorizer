@@ -17,7 +17,7 @@ import logging
 import logging.handlers
 import traceback
 import base64 # Added for SVG embedding
-import re # Added for hex color validation
+import re
 
 # -------- AI Models -------- #
 # The following block is commented out, so we define REMBG_AVAILABLE manually.
