@@ -20,13 +20,13 @@ import base64 # Added for SVG embedding
 import re     # Added for hex color validation
 
 # -------- AI Models -------- #
-try:
-    from rembg import remove as rembg_remove
-    REMBG_AVAILABLE = True
-    print("✅ Rembg AI model loaded successfully")
-except ImportError:
-    REMBG_AVAILABLE = False
-    print("❌ Rembg not available, using fallback methods")
+# try:
+#     from rembg import remove as rembg_remove
+#     REMBG_AVAILABLE = True
+#     print("✅ Rembg AI model loaded successfully")
+# except ImportError:
+#     REMBG_AVAILABLE = False
+#     print("❌ Rembg not available, using fallback methods")
 
 # ----------------- Logging Setup ----------------- #
 log_folder = 'logs'
