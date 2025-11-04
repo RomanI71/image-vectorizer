@@ -1,0 +1,397 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>iLoveIMG Clone — Watermark Control</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<style>
+:root{--bg:#f8fafc;--card:#fff;--accent:#3498db;--muted:#6b7280}
+*{box-sizing:border-box}
+body{font-family:Inter,system-ui,-apple-system,'Segoe UI',Roboto,Helvetica,Arial;background:var(--bg);margin:0;color:#0f172a}
+.wrap{max-width:980px;margin:36px auto;padding:20px}
+.header{display:flex;justify-content:space-between;align-items:center;margin-bottom:18px}
+.logo{display:flex;gap:12px;align-items:center}
+.logo img{height:36px}
+h1{font-size:20px;margin:0}
+p.lead{color:var(--muted);margin:6px 0 0}
+.card{background:var(--card);border-radius:12px;padding:20px;box-shadow:0 6px 20px rgba(2,6,23,0.06)}
+.upload-box{border:2px dashed rgba(15,23,42,0.08);border-radius:10px;padding:28px;display:flex;gap:20px;align-items:center;justify-content:center;flex-direction:column;cursor:pointer}
+.upload-box.highlight{background:linear-gradient(90deg,rgba(52,152,219,0.06),rgba(231,76,60,0.03));border-color:var(--accent)}
+.btn{display:inline-flex;align-items:center;gap:8px;padding:10px 14px;border-radius:8px;border:none;cursor:pointer;font-weight:600;transition:0.2s}
+.btn:hover{opacity:0.9}
+.btn-primary{background:var(--accent);color:#fff}
+.btn-secondary{background:#111827;color:#fff}
+.grid{display:grid;grid-template-columns:1fr 220px;gap:18px;margin-top:18px}
+canvas{max-width:100%;max-height:500px;border-radius:10px;background:#f3f4f6;padding:6px;cursor:move}
+label{font-weight:600;font-size:14px;margin-top:6px;display:block;margin-bottom:4px}
+input[type="range"]{width:100%}
+footer{text-align:center;color:var(--muted);font-size:13px;margin-top:20px}
+.small{font-size:12px;color:var(--muted)}
+@media(max-width:900px){.grid{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="header">
+    <div class="logo">
+      <img src="https://cdn-icons-png.flaticon.com/512/888/888879.png" alt="logo">
+      <div>
+        <h1>iLoveIMG Clone</h1>
+        <p class="lead">Drag and resize your watermark</p>
+      </div>
+    </div>
+    <a href="#" onclick="history.back();" class="btn btn-secondary"><i class="fa fa-arrow-left"></i> Back</a>
+  </div>
+
+  <div class="card">
+    <div class="upload-box" id="uploadBox">
+      <i class="fa fa-cloud-upload" style="font-size:36px;color:var(--accent)"></i>
+      <h3>Drag & drop or select main image</h3>
+      <p style="font-size:13px;color:var(--muted)">Supports JPG, PNG — max 25MB</p>
+      <button id="selectBtn" class="btn btn-primary"><i class="fa fa-folder-open"></i> Select Image</button>
+      <input type="file" id="fileInput" accept="image/*" style="display:none">
+    </div>
+
+    <div class="grid">
+      <div>
+        <canvas id="canvas"></canvas>
+        <div style="display:flex;gap:10px;justify-content:center;margin-top:10px">
+          <button id="resetBtn" class="btn"><i class="fa fa-undo"></i> Reset</button>
+          <button id="downloadBtn" class="btn btn-secondary"><i class="fa fa-download"></i> Download</button>
+        </div>
+      </div>
+
+      <aside class="card">
+        <label>Watermark Image</label>
+        <input id="watermarkImage" type="file" accept="image/*">
+
+        <label>Image Size</label>
+        <input type="range" id="imageSize" min="1" max="100" value="30">
+
+        <label>Image Opacity</label>
+        <input type="range" id="imgOpacity" min="0.1" max="1" step="0.05" value="1">
+        <span id="imgOpacityVal" class="small">100%</span>
+
+        <hr style="margin:12px 0;border:0;border-top:1px solid #eee">
+
+        <label>Text</label>
+        <input id="watermarkText" placeholder="Enter text..." style="width:100%;padding:6px;border:1px solid #ddd;border-radius:6px">
+
+        <label>Text Size</label>
+        <input type="range" id="textSize" min="10" max="100" value="28">
+
+        <label>Text Color</label>
+        <input type="color" id="textColor" value="#000000">
+
+        <label>Text Opacity</label>
+        <input type="range" id="textOpacity" min="0.1" max="1" step="0.05" value="1">
+        <span id="textOpacityVal" class="small">100%</span>
+
+        <p style="font-size:13px;color:var(--muted);margin-top:10px;">Drag watermark image or text on canvas to reposition. Resize watermark using blue corner.</p>
+      </aside>
+    </div>
+  </div>
+
+  <footer>&copy; 2025 iLoveIMG Clone</footer>
+</div>
+
+<script>
+const fileInput = document.getElementById('fileInput');
+const selectBtn = document.getElementById('selectBtn');
+const uploadBox = document.getElementById('uploadBox');
+const canvas = document.getElementById('canvas');
+const ctx = canvas.getContext('2d');
+
+const watermarkText = document.getElementById('watermarkText');
+const textColor = document.getElementById('textColor');
+const textOpacity = document.getElementById('textOpacity');
+const textOpacityVal = document.getElementById('textOpacityVal');
+const textSize = document.getElementById('textSize');
+
+const watermarkImage = document.getElementById('watermarkImage');
+const imageSize = document.getElementById('imageSize');
+const imgOpacity = document.getElementById('imgOpacity');
+const imgOpacityVal = document.getElementById('imgOpacityVal');
+
+const resetBtn = document.getElementById('resetBtn');
+const downloadBtn = document.getElementById('downloadBtn');
+
+let baseImg = null;
+let wmImg = null;
+let textObj = { x: 100, y: 100, size: 28, text: '' };
+let imgObj = { x: 150, y: 150, scale: 0.3, img: null };
+let dragging = false, dragTarget = null, resizing = false;
+let dragOffsetX = 0, dragOffsetY = 0;
+
+// Drag highlight
+['dragenter', 'dragover'].forEach(evt => uploadBox.addEventListener(evt, e => { 
+    e.preventDefault(); 
+    uploadBox.classList.add('highlight'); 
+}));
+
+['dragleave', 'drop'].forEach(evt => uploadBox.addEventListener(evt, e => { 
+    e.preventDefault(); 
+    uploadBox.classList.remove('highlight'); 
+}));
+
+uploadBox.addEventListener('drop', e => { 
+    e.preventDefault(); 
+    if (e.dataTransfer.files[0]) {
+        handleFile(e.dataTransfer.files[0]); 
+    }
+});
+
+// Main image upload
+selectBtn.onclick = () => fileInput.click();
+fileInput.onchange = e => {
+    if (e.target.files[0]) {
+        handleFile(e.target.files[0]);
+    }
+};
+
+function handleFile(file) {
+  if (!file || !file.type.match('image.*')) return;
+  const img = new Image();
+  img.onload = () => { 
+      baseImg = img; 
+      canvas.width = img.width; 
+      canvas.height = img.height; 
+      draw(); 
+  };
+  img.onerror = () => alert('Error loading image');
+  img.src = URL.createObjectURL(file);
+}
+
+// Watermark image upload
+watermarkImage.onchange = e => {
+  const file = e.target.files[0]; 
+  if (!file || !file.type.match('image.*')) return;
+  const img = new Image();
+  img.onload = () => { 
+      wmImg = img; 
+      imgObj.img = wmImg; 
+      draw(); 
+  };
+  img.onerror = () => alert('Error loading watermark image');
+  img.src = URL.createObjectURL(file);
+}
+
+// Draw function
+function draw() {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  if (baseImg) {
+    ctx.drawImage(baseImg, 0, 0, canvas.width, canvas.height);
+  }
+
+  // Watermark image
+  if (imgObj.img) {
+    const w = imgObj.img.width * imgObj.scale;
+    const h = imgObj.img.height * imgObj.scale;
+    ctx.save();
+    ctx.globalAlpha = parseFloat(imgOpacity.value);
+    ctx.drawImage(imgObj.img, imgObj.x, imgObj.y, w, h);
+    ctx.restore();
+    
+    // Draw resize handle
+    ctx.fillStyle = "#3498db";
+    ctx.fillRect(imgObj.x + w - 8, imgObj.y + h - 8, 8, 8);
+  }
+
+  // Watermark text
+  if (textObj.text && textObj.text.trim() !== '') {
+    ctx.save();
+    ctx.globalAlpha = parseFloat(textOpacity.value);
+    ctx.font = `bold ${textObj.size}px Arial`;
+    ctx.fillStyle = textColor.value;
+    ctx.fillText(textObj.text, textObj.x, textObj.y);
+    ctx.restore();
+  }
+}
+
+// Mouse events
+canvas.addEventListener('mousedown', e => {
+  const rect = canvas.getBoundingClientRect();
+  const scaleX = canvas.width / rect.width;
+  const scaleY = canvas.height / rect.height;
+  const x = (e.clientX - rect.left) * scaleX;
+  const y = (e.clientY - rect.top) * scaleY;
+
+  // Check if clicking on resize handle
+  if (imgObj.img) {
+    const w = imgObj.img.width * imgObj.scale;
+    const h = imgObj.img.height * imgObj.scale;
+    if (x > imgObj.x + w - 15 && x < imgObj.x + w + 5 && y > imgObj.y + h - 15 && y < imgObj.y + h + 5) {
+      resizing = true;
+      dragTarget = 'image-resize';
+      return;
+    }
+  }
+
+  // Check if clicking on image
+  if (imgObj.img) {
+    const w = imgObj.img.width * imgObj.scale;
+    const h = imgObj.img.height * imgObj.scale;
+    if (x > imgObj.x && x < imgObj.x + w && y > imgObj.y && y < imgObj.y + h) {
+      dragging = true;
+      dragTarget = 'image';
+      dragOffsetX = x - imgObj.x;
+      dragOffsetY = y - imgObj.y;
+      canvas.style.cursor = 'grabbing';
+      return;
+    }
+  }
+
+  // Check if clicking on text
+  if (textObj.text && textObj.text.trim() !== '') {
+    ctx.font = `bold ${textObj.size}px Arial`;
+    const metrics = ctx.measureText(textObj.text);
+    const textHeight = textObj.size;
+    const textWidth = metrics.width;
+    
+    // Text bounding box
+    if (x > textObj.x && x < textObj.x + textWidth && y > textObj.y - textHeight && y < textObj.y) {
+      dragging = true;
+      dragTarget = 'text';
+      dragOffsetX = x - textObj.x;
+      dragOffsetY = y - textObj.y;
+      canvas.style.cursor = 'grabbing';
+      return;
+    }
+  }
+});
+
+canvas.addEventListener('mousemove', e => {
+  const rect = canvas.getBoundingClientRect();
+  const scaleX = canvas.width / rect.width;
+  const scaleY = canvas.height / rect.height;
+  const x = (e.clientX - rect.left) * scaleX;
+  const y = (e.clientY - rect.top) * scaleY;
+
+  // Update cursor
+  if (!dragging && !resizing) {
+    let cursor = 'default';
+    
+    if (imgObj.img) {
+      const w = imgObj.img.width * imgObj.scale;
+      const h = imgObj.img.height * imgObj.scale;
+      
+      // Check resize handle
+      if (x > imgObj.x + w - 15 && x < imgObj.x + w + 5 && y > imgObj.y + h - 15 && y < imgObj.y + h + 5) {
+        cursor = 'nw-resize';
+      }
+      // Check image
+      else if (x > imgObj.x && x < imgObj.x + w && y > imgObj.y && y < imgObj.y + h) {
+        cursor = 'grab';
+      }
+    }
+    
+    // Check text
+    if (textObj.text && textObj.text.trim() !== '') {
+      ctx.font = `bold ${textObj.size}px Arial`;
+      const metrics = ctx.measureText(textObj.text);
+      const textWidth = metrics.width;
+      const textHeight = textObj.size;
+      
+      if (x > textObj.x && x < textObj.x + textWidth && y > textObj.y - textHeight && y < textObj.y) {
+        cursor = 'grab';
+      }
+    }
+    
+    canvas.style.cursor = cursor;
+  }
+
+  if (dragging) {
+    if (dragTarget === 'text') {
+      textObj.x = x - dragOffsetX;
+      textObj.y = y - dragOffsetY;
+    }
+    if (dragTarget === 'image') {
+      imgObj.x = x - dragOffsetX;
+      imgObj.y = y - dragOffsetY;
+    }
+    draw();
+  }
+
+  if (resizing && imgObj.img) {
+    const newWidth = x - imgObj.x;
+    const newScale = Math.max(0.05, Math.min(newWidth / imgObj.img.width, 2));
+    imgObj.scale = newScale;
+    imageSize.value = Math.round(newScale * 100);
+    draw();
+  }
+});
+
+canvas.addEventListener('mouseup', () => {
+  dragging = false;
+  resizing = false;
+  dragTarget = null;
+  canvas.style.cursor = 'default';
+});
+
+canvas.addEventListener('mouseleave', () => {
+  dragging = false;
+  resizing = false;
+  dragTarget = null;
+  canvas.style.cursor = 'default';
+});
+
+// Controls
+watermarkText.addEventListener('input', () => {
+  textObj.text = watermarkText.value;
+  draw();
+});
+
+textSize.addEventListener('input', () => {
+  textObj.size = parseInt(textSize.value);
+  draw();
+});
+
+imageSize.addEventListener('input', () => {
+  imgObj.scale = parseInt(imageSize.value) / 100;
+  draw();
+});
+
+textColor.addEventListener('input', draw);
+
+textOpacity.addEventListener('input', () => {
+  textOpacityVal.textContent = Math.round(textOpacity.value * 100) + '%';
+  draw();
+});
+
+imgOpacity.addEventListener('input', () => {
+  imgOpacityVal.textContent = Math.round(imgOpacity.value * 100) + '%';
+  draw();
+});
+
+// Reset & Download
+resetBtn.onclick = () => {
+  textObj = { x: 100, y: 100, size: 28, text: '' };
+  imgObj = { x: 150, y: 150, scale: 0.3, img: wmImg };
+  watermarkText.value = '';
+  textSize.value = 28;
+  imageSize.value = 30;
+  textOpacity.value = 1;
+  imgOpacity.value = 1;
+  textColor.value = '#000000';
+  textOpacityVal.textContent = '100%';
+  imgOpacityVal.textContent = '100%';
+  draw();
+}
+
+downloadBtn.onclick = () => {
+  if (!baseImg) {
+    alert('Please select an image first');
+    return;
+  }
+  const link = document.createElement('a');
+  link.download = 'watermarked-image.png';
+  link.href = canvas.toDataURL('image/png');
+  link.click();
+}
+
+// Initial draw
+draw();
+</script>
+</body>
+</html>

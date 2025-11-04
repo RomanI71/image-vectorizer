@@ -1,0 +1,903 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>iLoveIMG - Online Image Editor for Free</title>
+    <!-- Font Awesome for icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+
+    <style>
+        /* Basic Resets & Global Styles */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            background-color: #f8f9fa; /* Light grey background */
+            color: #343a40; /* Darker text for readability */
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 20px;
+        }
+
+        a {
+            text-decoration: none;
+            color: #3498db; /* Default link blue */
+            transition: color 0.3s ease;
+        }
+
+        a:hover {
+            color: #2980b9;
+        }
+
+        ul {
+            list-style: none;
+        }
+
+        /* Buttons */
+        .btn {
+            display: inline-block;
+            padding: 10px 20px;
+            border-radius: 5px;
+            font-weight: 600;
+            text-align: center;
+            transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
+            cursor: pointer;
+            font-size: 16px;
+            border: none;
+        }
+
+        .btn-primary {
+            background-color: #e74c3c; /* iLoveIMG red */
+            color: #fff;
+        }
+
+        .btn-primary:hover {
+            background-color: #c0392b;
+        }
+
+        .btn-login {
+            background-color: transparent;
+            border: 1px solid #3498db;
+            color: #3498db;
+        }
+
+        .btn-login:hover {
+            background-color: #3498db;
+            color: #fff;
+        }
+
+        .btn-signup {
+            background-color: #e74c3c; /* iLoveIMG red */
+            color: #fff;
+        }
+
+        .btn-signup:hover {
+            background-color: #c0392b;
+        }
+
+        .btn-premium {
+            background-color: #f39c12; /* Premium gold */
+            color: #fff;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn-premium:hover {
+            background-color: #e67e22;
+        }
+
+
+        /* Header */
+        header {
+            background-color: #fff;
+            padding: 15px 0;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+        }
+
+        header .container {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .logo img {
+            height: 40px; /* Adjust as needed */
+        }
+
+        nav {
+            display: flex;
+            align-items: center;
+            gap: 25px;
+        }
+
+        nav .main-nav {
+            display: flex;
+            gap: 25px;
+        }
+
+        nav .main-nav li a {
+            color: #555;
+            font-weight: 500;
+            text-transform: uppercase;
+            font-size: 15px;
+        }
+
+        nav .main-nav li a:hover {
+            color: #e74c3c; /* iLoveIMG red */
+        }
+
+        .auth-actions {
+            display: flex;
+            gap: 15px;
+            align-items: center;
+        }
+
+        .mobile-menu-toggle {
+            display: none;
+            font-size: 28px;
+            cursor: pointer;
+            color: #e74c3c;
+        }
+
+        /* Hero Section */
+        .hero-section {
+            background: linear-gradient(135deg, #3498db 0%, #2980b9 100%); /* Blue gradient */
+            color: #fff;
+            text-align: center;
+            padding: 120px 0;
+            margin-bottom: 50px;
+        }
+
+        .hero-section h1 {
+            font-size: 4.2em; /* Larger headline */
+            margin-bottom: 20px;
+            font-weight: 700;
+        }
+
+        .hero-section p {
+            font-size: 1.5em;
+            margin-bottom: 40px;
+            opacity: 0.9;
+            max-width: 800px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        .upload-area {
+            background-color: rgba(255, 255, 255, 0.15); /* Slightly transparent white */
+            border: 2px dashed rgba(255, 255, 255, 0.5);
+            border-radius: 10px;
+            padding: 40px 30px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            max-width: 600px;
+            margin: 0 auto;
+            gap: 15px;
+            cursor: pointer;
+            transition: background-color 0.3s ease, border-color 0.3s ease;
+        }
+
+        .upload-area:hover {
+            background-color: rgba(255, 255, 255, 0.25);
+            border-color: rgba(255, 255, 255, 0.8);
+        }
+
+        .upload-area .btn-upload {
+            background-color: #e74c3c;
+            color: #fff;
+            padding: 15px 30px;
+            font-size: 1.2em;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .upload-area .btn-upload i {
+            font-size: 1.3em;
+        }
+
+        .upload-area span {
+            font-size: 1.1em;
+            opacity: 0.8;
+        }
+
+        /* Tools Categories */
+        .tools-categories {
+            padding: 60px 0;
+            background-color: #f8f9fa;
+        }
+
+        .section-title {
+            font-size: 2.5em;
+            text-align: center;
+            margin-bottom: 40px;
+            color: #343a40;
+            position: relative;
+            padding-bottom: 15px;
+        }
+
+        .section-title::after {
+            content: '';
+            display: block;
+            width: 60px;
+            height: 3px;
+            background-color: #e74c3c;
+            margin: 15px auto 0;
+            border-radius: 2px;
+        }
+
+        .tools-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 25px;
+            margin-bottom: 60px;
+        }
+
+        .tool-card {
+            background-color: #fff;
+            border-radius: 10px;
+            padding: 30px;
+            text-align: center;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            border: 1px solid #eee;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            color: inherit; /* Inherit text color */
+        }
+
+        .tool-card:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.12);
+        }
+
+        .tool-card i {
+            font-size: 55px;
+            color: #e74c3c; /* iLoveIMG red for icons */
+            margin-bottom: 20px;
+        }
+
+        .tool-card h3 {
+            font-size: 24px;
+            margin-bottom: 10px;
+            color: #343a40;
+            font-weight: 600;
+        }
+
+        .tool-card p {
+            font-size: 16px;
+            color: #6c757d; /* Lighter grey for descriptions */
+        }
+
+        /* CTA Section */
+        .cta-section {
+            background-color: #34495e; /* Darker background */
+            color: #fff;
+            text-align: center;
+            padding: 100px 0;
+            margin-top: 50px;
+        }
+
+        .cta-section h2 {
+            font-size: 3.5em;
+            margin-bottom: 25px;
+            font-weight: 700;
+        }
+
+        .cta-section p {
+            font-size: 1.3em;
+            margin-bottom: 40px;
+            opacity: 0.9;
+            max-width: 700px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        /* Footer */
+        footer {
+            background-color: #2c3e50; /* Dark blue/grey */
+            color: #ecf0f1;
+            padding: 60px 0 30px;
+        }
+
+        .footer-grid {
+            display: grid;
+            grid-template-columns: 2fr repeat(4, 1fr); /* Larger first column for logo/description */
+            gap: 30px;
+            margin-bottom: 40px;
+            padding-bottom: 30px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .footer-column {
+            margin-bottom: 20px;
+        }
+
+        .footer-logo {
+            height: 35px; /* Adjust logo size */
+            margin-bottom: 20px;
+        }
+
+        .footer-column p {
+            font-size: 15px;
+            margin-bottom: 20px;
+            line-height: 1.8;
+            opacity: 0.9;
+        }
+
+        .footer-column h4 {
+            font-size: 18px;
+            margin-bottom: 20px;
+            color: #fff;
+            font-weight: 600;
+        }
+
+        .footer-column ul li {
+            margin-bottom: 10px;
+        }
+
+        .footer-column ul li a {
+            color: #ecf0f1;
+            font-size: 15px;
+            opacity: 0.8;
+        }
+
+        .footer-column ul li a:hover {
+            color: #3498db;
+            opacity: 1;
+        }
+
+        .lang-selector {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            background-color: rgba(255, 255, 255, 0.1);
+            border-radius: 5px;
+            padding: 8px 12px;
+            width: fit-content;
+            margin-top: 20px;
+        }
+
+        .lang-selector i {
+            font-size: 18px;
+            color: #fff;
+        }
+
+        .lang-selector select {
+            background-color: transparent;
+            border: none;
+            color: #fff;
+            font-size: 15px;
+            padding-right: 15px; /* Space for dropdown arrow */
+            appearance: none; /* Hide default arrow */
+            cursor: pointer;
+            outline: none;
+        }
+
+        .lang-selector select option {
+            background-color: #2c3e50;
+            color: #fff;
+        }
+
+        .copyright-social {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding-top: 20px;
+            flex-wrap: wrap; /* For responsiveness */
+            gap: 20px;
+        }
+
+        .copyright-social p {
+            font-size: 14px;
+            opacity: 0.7;
+        }
+
+        .social-icons {
+            display: flex;
+            gap: 15px;
+        }
+
+        .social-icons a {
+            color: #ecf0f1;
+            font-size: 18px;
+            width: 35px;
+            height: 35px;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            transition: background-color 0.3s ease, border-color 0.3s ease;
+        }
+
+        .social-icons a:hover {
+            background-color: #3498db;
+            border-color: #3498db;
+        }
+
+        /* Responsive Design */
+        @media (max-width: 992px) {
+            nav .main-nav, .auth-actions {
+                display: none;
+            }
+
+            header .container {
+                flex-wrap: nowrap; /* Keep logo and toggle on one line */
+                justify-content: space-between;
+            }
+
+            .mobile-menu-toggle {
+                display: block;
+            }
+
+            /* Mobile menu overlay */
+            nav.active {
+                position: fixed;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                background-color: rgba(0, 0, 0, 0.9);
+                z-index: 1000;
+                display: flex;
+                flex-direction: column;
+                justify-content: center;
+                align-items: center;
+            }
+
+            nav.active .main-nav {
+                display: flex;
+                flex-direction: column;
+                gap: 30px;
+                font-size: 24px;
+                margin-bottom: 40px;
+            }
+
+            nav.active .main-nav li a {
+                color: #fff;
+                font-size: 24px;
+            }
+
+            nav.active .auth-actions {
+                display: flex;
+                flex-direction: column;
+                gap: 20px;
+                width: 80%; /* Make buttons wider */
+            }
+            nav.active .auth-actions .btn {
+                width: 100%;
+            }
+
+
+            .hero-section {
+                padding: 80px 0;
+            }
+            .hero-section h1 {
+                font-size: 3em;
+            }
+            .hero-section p {
+                font-size: 1.2em;
+            }
+
+            .section-title {
+                font-size: 2em;
+            }
+
+            .footer-grid {
+                grid-template-columns: 1fr 1fr; /* 2 columns on tablets */
+            }
+
+            .footer-column:first-child { /* Adjust first column on smaller screens */
+                grid-column: span 2;
+                text-align: center;
+            }
+            .footer-column:first-child .lang-selector {
+                margin-left: auto;
+                margin-right: auto;
+            }
+
+            .copyright-social {
+                flex-direction: column;
+                text-align: center;
+            }
+            .social-icons {
+                margin-top: 15px;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .hero-section h1 {
+                font-size: 2.5em;
+            }
+            .hero-section p {
+                font-size: 1em;
+            }
+
+            .upload-area {
+                padding: 30px 20px;
+            }
+
+            .upload-area .btn-upload {
+                font-size: 1em;
+                padding: 12px 25px;
+            }
+
+            .upload-area span {
+                font-size: 0.9em;
+            }
+
+            .tools-grid {
+                grid-template-columns: 1fr; /* Stack tools on very small screens */
+            }
+
+            .section-title {
+                font-size: 1.8em;
+            }
+
+            .cta-section h2 {
+                font-size: 2.5em;
+            }
+            .cta-section p {
+                font-size: 1.1em;
+            }
+
+            .footer-grid {
+                grid-template-columns: 1fr; /* Stack footer columns on mobile */
+                text-align: center;
+            }
+            .footer-column:first-child {
+                grid-column: span 1; /* Reset span */
+            }
+            .footer-column h4::after {
+                margin-left: auto;
+                margin-right: auto;
+            }
+            .footer-column ul {
+                padding-left: 0; /* Remove default list padding */
+            }
+        }
+
+        @media (max-width: 480px) {
+            .hero-section h1 {
+                font-size: 2em;
+            }
+            .hero-section p {
+                font-size: 0.9em;
+            }
+        }
+
+        /* Added by JS for drag & drop highlight */
+        .upload-area.highlight {
+            background-color: rgba(255, 255, 255, 0.35);
+            border-color: #fff;
+        }
+        .no-scroll {
+            overflow: hidden;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="container">
+            <div class="logo">
+                <img src="iloveimg-logo.svg" alt="iLoveIMG Logo">
+            </div>
+            <nav>
+                <ul class="main-nav">
+                    <li><a href="#">COMPRESS IMAGE</a></li>
+                    <li><a href="#">RESIZE IMAGE</a></li>
+                    <li><a href="#">CROP IMAGE</a></li>
+                    <li><a href="#">CONVERT</a></li>
+                    <li><a href="#">All IMAGE TOOLS</a></li>
+                </ul>
+                <div class="auth-actions">
+                    <a href="#" class="btn btn-login">Log In</a>
+                    <a href="#" class="btn btn-signup">Sign Up</a>
+                    <a href="#" class="btn btn-premium"><i class="fas fa-crown"></i> Premium</a>
+                </div>
+            </nav>
+            <div class="mobile-menu-toggle">
+                <i class="fas fa-bars"></i>
+            </div>
+        </div>
+    </header>
+
+    <main>
+        <section class="hero-section">
+            <div class="container">
+                <h1>Every tool you need to work with images in one place</h1>
+                <p>Edit images online for free. Compress, resize, crop, convert, and more!</p>
+                <div class="upload-area">
+                    <button class="btn btn-upload"><i class="fas fa-upload"></i> Select Images</button>
+                    <span>or drop images here</span>
+                </div>
+            </div>
+        </section>
+
+        <section class="tools-categories">
+            <div class="container">
+                <h2 class="section-title">Modify IMAGE</h2>
+                <div class="tools-grid">
+                    <a href="compress_tool.html" class="tool-card">
+                        <i class="fas fa-compress-alt"></i>
+                        <h3>Compress IMAGE</h3>
+                        <p>Reduce image size while maintaining quality.</p>
+                    </a>
+                    <a href="resize.html" class="tool-card">
+                        <i class="fas fa-expand-alt"></i>
+                        <h3>Resize IMAGE</h3>
+                        <p>Change dimensions of your images.</p>
+                    </a>
+                    <a href="crop.html" class="tool-card">
+                        <i class="fas fa-crop-alt"></i>
+                        <h3>Crop IMAGE</h3>
+                        <p>Cut out unwanted parts of an image.</p>
+                    </a>
+                    <a href="#" class="tool-card">
+                        <i class="fas fa-cut"></i>
+                        <h3>Cut IMAGE</h3>
+                        <p>Cut parts of an image into separate images.</p>
+                    </a>
+                    <a href="watermark.html" class="tool-card">
+                        <i class="fas fa-tint"></i>
+                        <h3>Watermark IMAGE</h3>
+                        <p>Add text or image watermarks.</p>
+                    </a>
+                    <a href="photoEdit.html" class="tool-card">
+                        <i class="fas fa-paint-brush"></i>
+                        <h3>Photo Editor</h3>
+                        <p>Enhance and retouch your photos.</p>
+                    </a>
+                    <a href="Join Image.html" class="tool-card">
+                        <i class="fas fa-object-group"></i>
+                        <h3>Join IMAGE</h3>
+                        <p>Combine multiple images into one.</p>
+                    </a>
+                    <a href="Rotate Image.html" class="tool-card">
+                        <i class="fas fa-image"></i>
+                        <h3>Rotate IMAGE</h3>
+                        <p>Rotate your images by 90, 180, or 270 degrees.</p>
+                    </a>
+                    <a href="Flip.html" class="tool-card">
+                        <i class="fas fa-mirror"></i>
+                        <h3>Flip IMAGE</h3>
+                        <p>Flip images horizontally or vertically.</p>
+                    </a>
+                     <!-- ✅ Remove Background Tool -->
+                    <a href="bg_remove.html" class="tool-card">
+                        <i class="fas fa-eraser"></i>
+                        <h3>Remove Background</h3>
+                        <p>Automatically remove background from images.</p>
+                    </a>
+
+                    <!-- ✅ Image to Text Tool -->
+                    <a href="image-to-text.html" class="tool-card">
+                        <i class="fas fa-font"></i>
+                        <h3>Image to Text</h3>
+                        <p>Extract text from images using OCR.</p>
+                    </a>
+                    <a href="image-to-vector.html" class="tool-card">
+                        <i class="fas fa-vector-square"></i>
+                        <h3>Vectorize IMAGE</h3>
+                        <p>Convert your images to SVG with custom options.</p>
+                    </a>
+                </div>
+
+                <h2 class="section-title">Convert IMAGE</h2>
+                <div class="tools-grid">
+                    <a href="jpg-to-png.html" class="tool-card">
+                        <i class="fas fa-file-image"></i>
+                        <h3>JPG to PNG</h3>
+                        <p>Convert JPG images to PNG format.</p>
+                    </a>
+                    <a href="png-to-jpg.html" class="tool-card">
+                        <i class="fas fa-file-image"></i>
+                        <h3>PNG to JPG</h3>
+                        <p>Convert PNG images to JPG format.</p>
+                    </a>
+                    <a href="heice-to-jpg.html" class="tool-card">
+                        <i class="fas fa-file-image"></i>
+                        <h3>HEIC to JPG</h3>
+                        <p>Convert HEIC images to JPG format.</p>
+                    </a>
+                    <a href="gif-to-jpg.html" class="tool-card">
+                        <i class="fas fa-file-image"></i>
+                        <h3>GIF to JPG</h3>
+                        <p>Convert GIF images to JPG format.</p>
+                    </a>
+                    <a href="web-to-jpg.html" class="tool-card">
+                        <i class="fas fa-file-image"></i>
+                        <h3>WebP to JPG</h3>
+                        <p>Convert WebP images to JPG format.</p>
+                    </a>
+                    <a href="image-to-pdf.html" class="tool-card">
+                        <i class="fas fa-file-pdf"></i>
+                        <h3>Image to PDF</h3>
+                        <p>Convert images to a single PDF document.</p>
+                    </a>
+                    <a href="all-convert.html" class="tool-card">
+                        <i class="fas fa-image"></i>
+                        <h3>All Converters</h3>
+                        <p>Access all image conversion tools.</p>
+                    </a>
+                </div>
+
+                <h2 class="section-title">Organize IMAGE</h2>
+                <div class="tools-grid">
+                    <a href="mosaic.html" class="tool-card">
+                        <i class="fas fa-th-large"></i>
+                        <h3>Mosaic</h3>
+                        <p>Create image mosaics easily.</p>
+                    </a>
+                    <a href="collage-maker.html" class="tool-card">
+                        <i class="fas fa-border-all"></i>
+                        <h3>Collage Maker</h3>
+                        <p>Make stunning photo collages.</p>
+                    </a>
+                    <a href="meme-generator.html" class="tool-card">
+                        <i class="fas fa-dice"></i>
+                        <h3>Meme Generator</h3>
+                        <p>Create hilarious memes easily.</p>
+                    </a>
+                </div>
+            </div>
+        </section>
+
+        <section class="cta-section">
+            <div class="container">
+                <h2>Manage your images smarter, not harder.</h2>
+                <p>iLoveIMG simplifies image editing for everyone. Get started now, it's free!</p>
+                <a href="#" class="btn btn-primary">Start Editing Now</a>
+            </div>
+        </section>
+    </main>
+
+    <footer>
+        <div class="container">
+            <div class="footer-grid">
+                <div class="footer-column">
+                    <img src="iloveimg-logo-white.svg" alt="iLoveIMG Logo White" class="footer-logo">
+                    <p>Every tool you need to work with images in one place.</p>
+                    <div class="lang-selector">
+                        <i class="fas fa-globe"></i>
+                        <select>
+                            <option value="en">English</option>
+                            <option value="es">Español</option>
+                            <option value="fr">Français</option>
+                            <option value="de">Deutsch</option>
+                            <!-- More languages -->
+                        </select>
+                    </div>
+                </div>
+
+                <div class="footer-column">
+                    <h4>iLoveIMG</h4>
+                    <ul>
+                        <li><a href="#">Home</a></li>
+                        <li><a href="#">About Us</a></li>
+                        <li><a href="#">API</a></li>
+                        <li><a href="#">Pricing</a></li>
+                        <li><a href="#">FAQs</a></li>
+                    </ul>
+                </div>
+
+                <div class="footer-column">
+                    <h4>Products</h4>
+                    <ul>
+                        <li><a href="#">iLovePDF</a></li>
+                        <li><a href="#">iLoveIMG Desktop</a></li>
+                        <li><a href="#">Mobile App</a></li>
+                    </ul>
+                </div>
+
+                <div class="footer-column">
+                    <h4>Support</h4>
+                    <ul>
+                        <li><a href="#">Contact Us</a></li>
+                        <li><a href="#">Help Center</a></li>
+                    </ul>
+                </div>
+
+                <div class="footer-column">
+                    <h4>Legal</h4>
+                    <ul>
+                        <li><a href="#">Terms of Service</a></li>
+                        <li><a href="#">Privacy Policy</a></li>
+                        <li><a href="#">Cookie Policy</a></li>
+                    </ul>
+                </div>
+            </div>
+            <div class="copyright-social">
+                <p>&copy; 2023 iLoveIMG. All rights reserved.</p>
+                <div class="social-icons">
+                    <a href="#"><i class="fab fa-facebook-f"></i></a>
+                    <a href="#"><i class="fab fa-twitter"></i></a>
+                    <a href="#"><i class="fab fa-linkedin-in"></i></a>
+                    <a href="#"><i class="fab fa-instagram"></i></a>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const mobileMenuToggle = document.querySelector('.mobile-menu-toggle');
+            const nav = document.querySelector('nav');
+            const body = document.body;
+
+            if (mobileMenuToggle && nav) {
+                mobileMenuToggle.addEventListener('click', () => {
+                    nav.classList.toggle('active'); // Toggles 'active' class for the nav menu
+                    body.classList.toggle('no-scroll'); // Optional: prevent scrolling when menu is open
+                });
+
+                // Close menu if a link is clicked (for single-page navigation or general UX)
+                nav.querySelectorAll('a').forEach(link => {
+                    link.addEventListener('click', () => {
+                        nav.classList.remove('active');
+                        body.classList.remove('no-scroll');
+                    });
+                });
+            }
+
+            // Optional: Add drag & drop functionality to the upload area (conceptual)
+            const uploadArea = document.querySelector('.upload-area');
+            if (uploadArea) {
+                ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+                    uploadArea.addEventListener(eventName, preventDefaults, false);
+                });
+
+                function preventDefaults(e) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                }
+
+                ['dragenter', 'dragover'].forEach(eventName => {
+                    uploadArea.addEventListener(eventName, highlight, false);
+                });
+
+                ['dragleave', 'drop'].forEach(eventName => {
+                    uploadArea.addEventListener(eventName, unhighlight, false);
+                });
+
+                function highlight() {
+                    uploadArea.classList.add('highlight');
+                }
+
+                function unhighlight() {
+                    uploadArea.classList.remove('highlight');
+                }
+
+                uploadArea.addEventListener('drop', handleDrop, false);
+
+                function handleDrop(e) {
+                    const dt = e.dataTransfer;
+                    const files = dt.files;
+
+                    // Here you would process the files, e.g., upload them
+                    console.log('Files dropped:', files);
+                    alert(`Dropped ${files.length} file(s)! (This is a demo, no actual upload)`);
+
+                    // In a real application, you'd trigger your file upload/processing logic here.
+                    // Example: uploadFiles(files);
+                }
+            }
+        });
+    </script>
+</body>
+</html>

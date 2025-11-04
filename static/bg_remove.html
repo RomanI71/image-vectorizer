@@ -1,0 +1,452 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Remove Background — iLoveIMG Clone</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+    :root{--bg:#f8fafc;--card:#fff;--accent:#3498db;--muted:#6b7280;--success:#10b981;--warning:#f59e0b;--error:#ef4444}
+    *{box-sizing:border-box}
+    body{font-family:Inter,system-ui,-apple-system,'Segoe UI',Roboto,Helvetica,Arial;background:var(--bg);margin:0;color:#0f172a}
+    .wrap{max-width:980px;margin:36px auto;padding:20px}
+    .header{display:flex;justify-content:space-between;align-items:center;margin-bottom:18px}
+    .logo{display:flex;gap:12px;flex-direction:column}
+    h1{font-size:20px;margin:0}
+    p.lead{color:var(--muted);margin:4px 0 0;font-size:14px}
+    .card{background:var(--card);border-radius:12px;padding:20px;box-shadow:0 6px 20px rgba(2,6,23,0.06)}
+    .upload-box{border:2px dashed rgba(15,23,42,0.08);border-radius:10px;padding:28px;display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;text-align:center;transition:all 0.3s ease}
+    .upload-box.highlight{background:linear-gradient(90deg,rgba(52,152,219,0.06),rgba(231,76,60,0.03));border-color:var(--accent)}
+    .upload-box h3{font-size:16px;margin:8px 0}
+    .upload-box p.small{font-size:12px;margin:0;color:var(--muted)}
+    .btn{display:inline-flex;align-items:center;gap:6px;padding:6px 10px;border-radius:6px;border:none;cursor:pointer;font-weight:600;font-size:13px;transition:all 0.2s ease}
+    .btn:hover{transform:translateY(-1px);box-shadow:0 4px 12px rgba(0,0,0,0.15)}
+    .btn-primary{background:var(--accent);color:#fff}
+    .btn-secondary{background:#111827;color:#fff}
+    .btn-success{background:var(--success);color:#fff}
+    .btn:disabled{opacity:0.6;cursor:not-allowed;transform:none !important}
+    .grid{display:grid;grid-template-columns:1fr 360px;gap:18px;margin-top:18px}
+    .preview{position:relative}
+    .preview img{max-width:100%;max-height:360px;border-radius:8px;object-fit:contain;padding:8px;background:#f3f4f6;transition:all 0.3s ease}
+    .preview .quality-badge{position:absolute;top:12px;right:12px;background:var(--success);color:white;padding:4px 8px;border-radius:12px;font-size:11px;font-weight:600}
+    .small{font-size:13px;color:var(--muted)}
+    .progress{height:8px;background:#eef2f7;border-radius:8px;overflow:hidden;margin:8px 0}
+    .progress > i{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--accent),#f39c12);transition:width 0.3s ease}
+    .download-btn{display:flex;justify-content:space-between;align-items:center;padding:12px 14px;border-radius:10px;background:#0f172a;color:#fff;margin-top:10px;animation:fadeIn 0.5s ease}
+    .status-indicator{display:flex;align-items:center;gap:6px;font-size:12px;font-weight:500}
+    .status-dot{width:8px;height:8px;border-radius:50%;background:var(--muted)}
+    .status-dot.ready{background:var(--success)}
+    .status-dot.processing{background:var(--accent);animation:pulse 1.5s infinite}
+    .status-dot.error{background:var(--error)}
+    footer{margin-top:20px;text-align:center;color:var(--muted);font-size:13px}
+    #outName{font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:180px;display:block}
+    #removeBgBtn{font-size:13px;padding:6px 10px}
+    .feature-badge{display:inline-flex;align-items:center;gap:4px;background:linear-gradient(135deg,var(--accent),#8b5cf6);color:white;padding:4px 8px;border-radius:6px;font-size:11px;font-weight:600;margin-left:8px}
+    .options-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:12px}
+    .option-card{padding:10px;border:1px solid #e2e8f0;border-radius:8px;text-align:center;cursor:pointer;transition:all 0.2s ease}
+    .option-card:hover{border-color:var(--accent);background:#f8fafc}
+    .option-card.active{border-color:var(--accent);background:#dbeafe}
+    .option-card i{font-size:16px;margin-bottom:4px;display:block}
+    .option-card .label{font-size:11px;font-weight:600}
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.5; }
+    }
+
+    @media(max-width:900px){
+      .grid{grid-template-columns:1fr}
+      .preview img{max-height:300px}
+      .options-grid{grid-template-columns:1fr}
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="header">
+      <div class="logo">
+        <h1>Remove Background <span class="feature-badge"><i class="fa fa-star"></i> AI Powered</span></h1>
+        <p class="lead">Remove and customize image backgrounds instantly with remove.bg-like quality.</p>
+      </div>
+      <div class="actions">
+        <a class="btn btn-secondary" href="Index.html"><i class="fa fa-arrow-left"></i> Back</a>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="upload-box" id="uploadBox">
+        <i class="fa fa-cloud-upload" style="font-size:36px;color:var(--accent)"></i>
+        <h3>Drag & drop or select an image</h3>
+        <p class="small muted">JPG, PNG, WebP — max 10MB</p>
+        <button id="selectBtn" class="btn btn-primary"><i class="fa fa-folder-open"></i> Select Image</button>
+        <input id="fileInput" type="file" accept="image/*" style="display:none">
+      </div>
+
+      <div class="grid" style="margin-top:18px">
+        <div class="panel">
+          <div class="card preview">
+            <img id="previewImg" src="" alt="preview" style="display:none">
+            <div id="placeholder" class="small muted">Preview will appear here</div>
+          </div>
+
+          <div class="card">
+            <button id="removeBgBtn" class="btn btn-primary" style="width:100%">
+              <i class="fa fa-scissors"></i> Remove Background
+            </button>
+
+            <div class="options-grid">
+              <div class="option-card active" data-quality="high">
+                <i class="fa fa-crown" style="color:#f59e0b"></i>
+                <div class="label">High Quality</div>
+                <div class="small">remove.bg like</div>
+              </div>
+              <div class="option-card" data-quality="standard">
+                <i class="fa fa-bolt" style="color:#10b981"></i>
+                <div class="label">Fast</div>
+                <div class="small">Standard quality</div>
+              </div>
+            </div>
+
+            <div style="margin-top:12px">
+              <label for="bgColorPicker" class="small" style="font-weight:600">Background:</label>
+              <select id="bgMode" class="btn btn-secondary" style="margin-left:8px;">
+                <option value="transparent">Transparent</option>
+                <option value="#ffffff">White</option>
+                <option value="#000000">Black</option>
+                <option value="custom">Custom Color</option>
+              </select>
+              <input type="color" id="bgColorPicker" value="#3498db" style="display:none;margin-left:8px;">
+            </div>
+          </div>
+        </div>
+
+        <aside class="card">
+          <strong>Processing Status</strong>
+          <div class="status-indicator">
+            <div id="statusDot" class="status-dot"></div>
+            <span id="status">Ready to process</span>
+          </div>
+          
+          <div class="progress"><i id="bar"></i></div>
+          
+          <div id="processingInfo" style="display:none; margin-top:8px;">
+            <div class="small" style="display:flex; justify-content:space-between;">
+              <span>AI Processing:</span>
+              <span id="aiStatus">Initializing...</span>
+            </div>
+          </div>
+
+          <div id="downloadWrap" style="display:none;">
+            <div class="download-btn">
+              <div>
+                <div id="outName">output.png</div>
+                <div class="small muted" id="outInfo">PNG • Transparent</div>
+              </div>
+              <a id="downloadLink" class="btn btn-success" download>
+                <i class="fa fa-download"></i> Download
+              </a>
+            </div>
+            <div class="small" style="margin-top:8px; text-align:center;">
+              <i class="fa fa-check-circle" style="color:var(--success)"></i>
+              <span>Background removed successfully!</span>
+            </div>
+          </div>
+
+          <div id="tips" class="small" style="margin-top:12px; padding:8px; background:#f8fafc; border-radius:6px;">
+            <strong>💡 Tips for best results:</strong>
+            <ul style="margin:4px 0; padding-left:16px;">
+              <li>Use high contrast images</li>
+              <li>Ensure good lighting</li>
+              <li>Select "High Quality" for best output</li>
+            </ul>
+          </div>
+        </aside>
+      </div>
+    </div>
+
+    <footer>
+      <p>&copy; 2025 iLoveIMG Clone — Professional Background Remover</p>
+      <p class="small" style="margin-top:4px;">Powered by AI Technology • remove.bg-like quality</p>
+    </footer>
+  </div>
+
+  <script>
+    const uploadBox = document.getElementById('uploadBox');
+    const fileInput = document.getElementById('fileInput');
+    const selectBtn = document.getElementById('selectBtn');
+    const previewImg = document.getElementById('previewImg');
+    const placeholder = document.getElementById('placeholder');
+    const removeBgBtn = document.getElementById('removeBgBtn');
+    const status = document.getElementById('status');
+    const statusDot = document.getElementById('statusDot');
+    const bar = document.getElementById('bar');
+    const downloadWrap = document.getElementById('downloadWrap');
+    const downloadLink = document.getElementById('downloadLink');
+    const outName = document.getElementById('outName');
+    const outInfo = document.getElementById('outInfo');
+    const bgMode = document.getElementById('bgMode');
+    const bgColorPicker = document.getElementById('bgColorPicker');
+    const processingInfo = document.getElementById('processingInfo');
+    const aiStatus = document.getElementById('aiStatus');
+    const qualityCards = document.querySelectorAll('.option-card');
+
+    let currentFile = null;
+    let currentQuality = 'high';
+    let isProcessing = false;
+
+    // Quality selection
+    qualityCards.forEach(card => {
+      card.addEventListener('click', () => {
+        qualityCards.forEach(c => c.classList.remove('active'));
+        card.classList.add('active');
+        currentQuality = card.dataset.quality;
+      });
+    });
+
+    // File selection
+    selectBtn.addEventListener('click', () => fileInput.click());
+    fileInput.addEventListener('change', e => handleFiles(e.target.files));
+
+    // Drag and drop
+    uploadBox.addEventListener('dragover', e => {
+      e.preventDefault();
+      uploadBox.classList.add('highlight');
+    });
+
+    uploadBox.addEventListener('dragleave', e => {
+      e.preventDefault();
+      uploadBox.classList.remove('highlight');
+    });
+
+    uploadBox.addEventListener('drop', e => {
+      e.preventDefault();
+      uploadBox.classList.remove('highlight');
+      handleFiles(e.dataTransfer.files);
+    });
+
+    function handleFiles(files) {
+      if (!files.length) return;
+      const file = files[0];
+      
+      if (!file.type.startsWith('image/')) {
+        showError('Please select a valid image file');
+        return;
+      }
+      
+      if (file.size > 10 * 1024 * 1024) {
+        showError('File too large (max 10MB)');
+        return;
+      }
+      
+      currentFile = file;
+      const reader = new FileReader();
+      
+      reader.onload = e => {
+        previewImg.src = e.target.result;
+        previewImg.style.display = 'block';
+        placeholder.style.display = 'none';
+        updatePreviewBg();
+        
+        // Show quality badge
+        if (!previewImg.parentNode.querySelector('.quality-badge')) {
+          const badge = document.createElement('div');
+          badge.className = 'quality-badge';
+          badge.innerHTML = `<i class="fa fa-crown"></i> ${currentQuality === 'high' ? 'High Quality' : 'Fast'}`;
+          previewImg.parentNode.appendChild(badge);
+        }
+      };
+      
+      reader.readAsDataURL(file);
+      updateStatus('ready', 'Ready to process');
+      bar.style.width = '0%';
+      downloadWrap.style.display = 'none';
+      processingInfo.style.display = 'none';
+    }
+
+    function updatePreviewBg() {
+      const value = bgMode.value === 'custom' ? bgColorPicker.value : bgMode.value;
+      previewImg.style.background = value === 'transparent' ? 
+        'repeating-conic-gradient(#f3f4f6 0% 25%, white 0% 50%) 50% / 20px 20px' : value;
+    }
+
+    bgMode.addEventListener('change', () => {
+      bgColorPicker.style.display = bgMode.value === 'custom' ? 'inline-block' : 'none';
+      updatePreviewBg();
+    });
+
+    bgColorPicker.addEventListener('input', () => {
+      updatePreviewBg();
+    });
+
+    function updateStatus(type, message) {
+      status.textContent = message;
+      statusDot.className = 'status-dot';
+      
+      switch (type) {
+        case 'ready':
+          statusDot.classList.add('ready');
+          break;
+        case 'processing':
+          statusDot.classList.add('processing');
+          break;
+        case 'error':
+          statusDot.classList.add('error');
+          break;
+      }
+    }
+
+    function showError(message) {
+      updateStatus('error', message);
+      setTimeout(() => {
+        if (!isProcessing) updateStatus('ready', 'Ready to process');
+      }, 3000);
+    }
+
+    function simulateProgress() {
+      let width = 30;
+      const interval = setInterval(() => {
+        if (width >= 90) {
+          clearInterval(interval);
+          return;
+        }
+        width += Math.random() * 10;
+        bar.style.width = Math.min(width, 90) + '%';
+      }, 500);
+      return interval;
+    }
+
+    removeBgBtn.addEventListener('click', async () => {
+      if (!currentFile) {
+        showError('No image selected');
+        return;
+      }
+
+      if (isProcessing) return;
+
+      isProcessing = true;
+      updateStatus('processing', 'Processing image...');
+      bar.style.width = '10%';
+      removeBgBtn.disabled = true;
+      removeBgBtn.innerHTML = '<i class="fa fa-spinner fa-spin"></i> Processing...';
+      processingInfo.style.display = 'block';
+      aiStatus.textContent = 'Initializing AI model...';
+
+      const bgColor = bgMode.value === 'custom' ? bgColorPicker.value : bgMode.value;
+      const formData = new FormData();
+      formData.append('image', currentFile);
+      formData.append('background_color', bgColor);
+      formData.append('quality', currentQuality);
+
+      const progressInterval = simulateProgress();
+
+      try {
+        // Update AI status
+        setTimeout(() => {
+          if (isProcessing) aiStatus.textContent = 'Analyzing image content...';
+        }, 1000);
+
+        setTimeout(() => {
+          if (isProcessing) aiStatus.textContent = 'Removing background...';
+        }, 2500);
+
+        const res = await fetch('http://localhost:8000/remove-bg', {
+          method: 'POST',
+          body: formData
+        });
+
+        clearInterval(progressInterval);
+
+        if (!res.ok) {
+          throw new Error(`Server error: ${res.status}`);
+        }
+
+        const data = await res.json();
+
+        if (data.success) {
+          bar.style.width = '100%';
+          aiStatus.textContent = 'Complete!';
+          updateStatus('ready', 'Processing complete!');
+          
+          // 💡 আপডেট: FastAPI থেকে আসা URL ব্যবহার করা হচ্ছে
+          const previewUrl = `http://localhost:8000${data.previewUrl}`;
+          const downloadUrl = `http://localhost:8000${data.downloadUrl}`;
+          
+          previewImg.src = previewUrl;
+          updatePreviewBg();
+          downloadLink.href = downloadUrl;
+          outName.textContent = data.filename;
+          
+          const format = data.format || 'PNG';
+          const bgText = bgColor === 'transparent' ? 'Transparent' : `Color ${bgColor}`;
+          outInfo.textContent = `${format} • ${bgText} • ${currentQuality === 'high' ? 'High Quality' : 'Standard'}`;
+          
+          downloadWrap.style.display = 'block';
+          
+          // Show success message
+          setTimeout(() => {
+            if (downloadWrap.style.display === 'block') {
+              const successMsg = document.createElement('div');
+              successMsg.className = 'small';
+              successMsg.style.cssText = 'margin-top:8px; text-align:center; color:var(--success);';
+              successMsg.innerHTML = '<i class="fa fa-check-circle"></i> Background removed successfully!';
+              downloadWrap.appendChild(successMsg);
+            }
+          }, 100);
+        } else {
+          throw new Error(data.error || 'Failed to remove background');
+        }
+      } catch (err) {
+        console.error('Error:', err);
+        clearInterval(progressInterval);
+        
+        if (err.message.includes('Failed to fetch')) {
+          showError('Server not responding. Make sure FastAPI server is running on port 8000');
+        } else {
+          showError(err.message);
+        }
+      } finally {
+        isProcessing = false;
+        removeBgBtn.disabled = false;
+        removeBgBtn.innerHTML = '<i class="fa fa-scissors"></i> Remove Background';
+        
+        setTimeout(() => {
+          if (!isProcessing) {
+            processingInfo.style.display = 'none';
+          }
+        }, 2000);
+      }
+    });
+
+    // FastAPI server check on page load
+    window.addEventListener('load', async () => {
+      try {
+        const response = await fetch('http://localhost:8000/');
+        if (response.ok) {
+          const data = await response.json();
+          console.log('FastAPI server is running:', data);
+          updateStatus('ready', 'Connected to AI server');
+        }
+      } catch (error) {
+        console.warn('FastAPI server is not running on port 8000');
+        updateStatus('error', 'Server not connected - Start FastAPI server first');
+        
+        // Show helpful message
+        setTimeout(() => {
+          if (status.textContent.includes('not connected')) {
+            const helpMsg = document.createElement('div');
+            helpMsg.className = 'small';
+            helpMsg.style.cssText = 'margin-top:8px; padding:8px; background:#fef2f2; border:1px solid #fecaca; border-radius:6px; color:#dc2626;';
+            helpMsg.innerHTML = '<strong>⚠️ Server Offline:</strong> Run <code>uvicorn app:app --reload</code> in terminal to start the server';
+            status.parentNode.appendChild(helpMsg);
+          }
+        }, 1000);
+      }
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Advanced Meme Generator — iLoveIMG Style</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<style>
+:root{
+  --bg:#f8fafc; --card:#fff; --accent:#3498db; --muted:#6b7280; --border:#e5e7eb;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{
+  font-family:Inter,system-ui,-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;
+  background:var(--bg); color:#0f172a; line-height:1.5;
+}
+.wrap{max-width:800px;margin:36px auto;padding:18px;}
+.header{display:flex;justify-content:space-between;align-items:center;margin-bottom:18px;}
+.logo{display:flex;gap:12px;align-items:center;}
+h1{font-size:20px;margin:0;}
+p.lead{color:var(--muted);margin-top:6px;}
+.card{background:var(--card);border-radius:12px;padding:18px;box-shadow:0 6px 20px rgba(2,6,23,0.06);}
+.upload-box{border:2px dashed rgba(15,23,42,0.08);border-radius:10px;padding:24px;display:flex;flex-direction:column;align-items:center;gap:12px;cursor:pointer;transition:all .2s;}
+.upload-box:hover{background:linear-gradient(90deg, rgba(52,152,219,0.04), rgba(0,0,0,0.01));}
+.btn{display:inline-flex;align-items:center;gap:6px;padding:6px 10px;border-radius:6px;border:none;cursor:pointer;font-weight:600;font-size:13px;}
+.btn-primary{background:var(--accent);color:#fff;}
+.btn-secondary{background:#111827;color:#fff;}
+.preview{margin-top:16px;text-align:center;position:relative;}
+canvas{max-width:100%;border-radius:10px;box-shadow:0 4px 12px rgba(0,0,0,0.05);}
+.input-group{margin-top:12px;display:flex;flex-direction:column;gap:8px;}
+.input-group input[type="text"]{padding:6px;border-radius:6px;border:1px solid var(--border);}
+.input-group label{font-size:13px;color:var(--muted);}
+.controls{display:flex;gap:8px;flex-wrap:wrap; margin-top:8px;}
+.controls input[type="color"], .controls input[type="range"]{flex:1;}
+</style>
+</head>
+<body>
+<div class="wrap">
+<div class="header">
+  <div class="logo">
+    <i class="fa fa-face-smile" style="font-size:28px;color:var(--accent)"></i>
+    <div>
+      <h1>Advanced Meme Generator</h1>
+      <p class="lead">Drag & Move Text Anywhere</p>
+    </div>
+  </div>
+  <a class="btn btn-secondary" href="index.html"><i class="fa fa-arrow-left"></i> Back</a>
+</div>
+
+<div class="card">
+  <div class="upload-box" id="uploadBox">
+    <i class="fa fa-image" style="font-size:34px;color:var(--accent)"></i>
+    <h3>Drag & drop or select an image</h3>
+    <button id="selectBtn" class="btn btn-primary"><i class="fa fa-folder-open"></i> Select Image</button>
+    <input id="fileInput" type="file" accept="image/*" style="display:none">
+  </div>
+
+  <div class="input-group">
+    <input type="text" id="topText" placeholder="Top text">
+    <input type="text" id="bottomText" placeholder="Bottom text">
+  </div>
+
+  <div class="controls">
+    <label>Top Color: <input type="color" id="topColor" value="#ffffff"></label>
+    <label>Bottom Color: <input type="color" id="bottomColor" value="#ffffff"></label>
+    <label>Font Size: <input type="range" id="fontSize" min="20" max="200" value="50"></label>
+    <label>Rotation: <input type="range" id="rotation" min="-90" max="90" value="0"></label>
+  </div>
+
+  <div class="preview">
+    <canvas id="memeCanvas"></canvas>
+  </div>
+
+  <div style="margin-top:12px; display:flex; gap:8px;">
+    <button id="generateBtn" class="btn btn-primary" style="flex:1"><i class="fa fa-pen"></i> Generate</button>
+    <button id="downloadBtn" class="btn btn-secondary" style="flex:1"><i class="fa fa-download"></i> Download</button>
+  </div>
+</div>
+</div>
+
+<script>
+const fileInput=document.getElementById('fileInput');
+const selectBtn=document.getElementById('selectBtn');
+const canvas=document.getElementById('memeCanvas');
+const ctx=canvas.getContext('2d');
+const topText=document.getElementById('topText');
+const bottomText=document.getElementById('bottomText');
+const generateBtn=document.getElementById('generateBtn');
+const downloadBtn=document.getElementById('downloadBtn');
+const topColor=document.getElementById('topColor');
+const bottomColor=document.getElementById('bottomColor');
+const fontSizeInput=document.getElementById('fontSize');
+const rotationInput=document.getElementById('rotation');
+
+let img=new Image();
+let texts=[
+  {text: '', x: 0.5, y: 0.1, color:'#fff'}, // Top
+  {text: '', x: 0.5, y: 0.9, color:'#fff'}  // Bottom
+];
+let dragIndex=null;
+
+selectBtn.onclick=()=>fileInput.click();
+fileInput.onchange=e=>{
+  if(e.target.files && e.target.files[0]){
+    img.src=URL.createObjectURL(e.target.files[0]);
+    img.onload=()=>drawMeme();
+  }
+};
+
+// Drag anywhere
+canvas.onmousedown=(e)=>{
+  const rect=canvas.getBoundingClientRect();
+  const mouseX=(e.clientX-rect.left)/canvas.width;
+  const mouseY=(e.clientY-rect.top)/canvas.height;
+  dragIndex=null;
+  texts.forEach((t,i)=>{
+    const fontH=fontSizeInput.value/canvas.height;
+    if(mouseX>t.x-0.15 && mouseX<t.x+0.15 && mouseY>t.y-fontH && mouseY<t.y+fontH){
+      dragIndex=i;
+    }
+  });
+};
+
+canvas.onmousemove=(e)=>{
+  if(dragIndex===null) return;
+  const rect=canvas.getBoundingClientRect();
+  const mouseX=(e.clientX-rect.left)/canvas.width;
+  const mouseY=(e.clientY-rect.top)/canvas.height;
+  texts[dragIndex].x=mouseX;
+  texts[dragIndex].y=mouseY;
+  drawMeme();
+};
+
+canvas.onmouseup=canvas.onmouseleave=()=>{dragIndex=null;};
+
+function drawMeme(){
+  if(!img.src) return;
+  const maxWidth=600;
+  let scale=Math.min(maxWidth/img.naturalWidth,1);
+  canvas.width=img.naturalWidth*scale;
+  canvas.height=img.naturalHeight*scale;
+
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+  ctx.drawImage(img,0,0,canvas.width,canvas.height);
+
+  texts[0].text=topText.value.toUpperCase();
+  texts[1].text=bottomText.value.toUpperCase();
+  texts[0].color=topColor.value;
+  texts[1].color=bottomColor.value;
+
+  ctx.textAlign='center';
+  ctx.lineWidth=3;
+  ctx.font=`${fontSizeInput.value*scale}px Impact`;
+
+  texts.forEach((t,i)=>{
+    ctx.save();
+    ctx.translate(canvas.width*t.x, canvas.height*t.y);
+    ctx.rotate(rotationInput.value*Math.PI/180);
+    ctx.fillStyle=t.color;
+    ctx.strokeStyle='black';
+    wrapText(ctx,t.text,0,0,canvas.width-20,fontSizeInput.value*scale,true);
+    ctx.restore();
+  });
+}
+
+function wrapText(context, text, x, y, maxWidth, lineHeight){
+  const words=text.split(' ');
+  let line=''; let lines=[];
+  for(let n=0;n<words.length;n++){
+    const testLine=line+words[n]+' ';
+    if(context.measureText(testLine).width>maxWidth && n>0){lines.push(line);line=words[n]+' ';}else{line=testLine;}
+  }
+  lines.push(line);
+  for(let i=0;i<lines.length;i++){
+    context.strokeText(lines[i],x,y+i*lineHeight);
+    context.fillText(lines[i],x,y+i*lineHeight);
+  }
+}
+
+[topText,bottomText,topColor,bottomColor,fontSizeInput,rotationInput].forEach(el=>el.addEventListener('input', drawMeme));
+generateBtn.onclick=drawMeme;
+downloadBtn.onclick=()=>{
+  const a=document.createElement('a');
+  a.href=canvas.toDataURL('image/jpeg',0.95);
+  a.download='meme.jpg';
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+};
+</script>
+</body>
+</html>

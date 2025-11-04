@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Image to PDF — iLoveIMG Style</title>
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/heic2any@0.0.3/dist/heic2any.min.js"></script>
+
+<style>
+:root{
+  --bg:#f8fafc; --card:#fff; --accent:#3498db; --muted:#6b7280; --border:#e5e7eb;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{
+  font-family:Inter,system-ui,-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;
+  background:var(--bg); color:#0f172a; line-height:1.5;
+}
+.wrap{max-width:900px;margin:36px auto;padding:18px}
+.header{display:flex;justify-content:space-between;align-items:center;margin-bottom:18px; flex-wrap:wrap; gap:12px;}
+.logo{display:flex;gap:12px;align-items:center}
+h1{font-size:20px;margin:0}
+p.lead{color:var(--muted);margin-top:6px}
+.card{background:var(--card);border-radius:12px;padding:18px;box-shadow:0 6px 20px rgba(2,6,23,0.06)}
+.upload-box{
+  border:2px dashed rgba(15,23,42,0.08);border-radius:10px;padding:24px;
+  display:flex;flex-direction:column;align-items:center;gap:12px;cursor:pointer;transition:all .2s
+}
+.upload-box:hover{background:linear-gradient(90deg, rgba(52,152,219,0.04), rgba(0,0,0,0.01))}
+.btn{display:inline-flex;align-items:center;gap:8px;padding:10px 14px;border-radius:8px;border:none;cursor:pointer;font-weight:600}
+.btn-primary{background:var(--accent);color:#fff}
+.btn-secondary{background:#111827;color:#fff}
+.preview-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:12px;margin-top:12px}
+.preview-item{background:#fafafa;padding:10px;border-radius:10px; text-align:center; box-shadow:0 2px 8px rgba(0,0,0,0.04); word-wrap: break-word;}
+.preview-item img{width:100%;height:90px;object-fit:cover;border-radius:8px}
+.preview-item div{overflow-wrap: break-word; word-break: break-word;}
+.status{font-size:13px;color:var(--muted);margin-top:8px;text-align:center;}
+@media(max-width:480px){.preview-grid{grid-template-columns:repeat(auto-fill,minmax(100px,1fr))}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="header">
+    <div class="logo">
+      <i class="fa fa-file-pdf" style="font-size:28px;color:var(--accent)"></i>
+      <div>
+        <h1>Image to PDF</h1>
+        <p class="lead">Convert multiple images into a single PDF (client-side)</p>
+      </div>
+    </div>
+    <a class="btn btn-secondary" href="index.html"><i class="fa fa-arrow-left"></i> Back</a>
+  </div>
+
+  <div class="card">
+    <div class="upload-box" id="uploadBox">
+      <i class="fa fa-cloud-arrow-up" style="font-size:34px;color:var(--accent)"></i>
+      <h3>Drag & drop or select images</h3>
+      <p class="muted">Supported: HEIC, HEIF, WEBP, PNG, JPG, JPEG, GIF — Max 25MB each</p>
+      <button id="selectBtn" class="btn btn-primary"><i class="fa fa-folder-open"></i> Select Files</button>
+      <input id="fileInput" type="file" accept=".heic,.heif,.webp,.png,.jpg,.jpeg,.gif,image/*" multiple style="display:none">
+    </div>
+
+    <div id="preview" class="preview-grid"></div>
+
+    <div style="margin-top:16px; display:flex; gap:12px; justify-content:center; flex-wrap:wrap;">
+      <button id="convertBtn" class="btn btn-primary" style="flex:1; min-width:140px;"><i class="fa fa-file-pdf"></i> Generate PDF</button>
+      <button id="clearBtn" class="btn btn-secondary" style="flex:1; min-width:140px;"><i class="fa fa-trash"></i> Clear</button>
+    </div>
+
+    <div class="status" id="status"></div>
+  </div>
+</div>
+
+<script>
+const { jsPDF } = window.jspdf;
+const fileInput = document.getElementById('fileInput');
+const selectBtn = document.getElementById('selectBtn');
+const uploadBox = document.getElementById('uploadBox');
+const preview = document.getElementById('preview');
+const convertBtn = document.getElementById('convertBtn');
+const clearBtn = document.getElementById('clearBtn');
+const status = document.getElementById('status');
+
+let files = [];
+
+selectBtn.onclick = ()=>fileInput.click();
+uploadBox.addEventListener('dragover', e=>{e.preventDefault();});
+uploadBox.addEventListener('drop', e=>{e.preventDefault(); handleFiles(e.dataTransfer.files);});
+fileInput.onchange = e=>handleFiles(e.target.files);
+
+function handleFiles(selectedFiles){
+  files = Array.from(selectedFiles).filter(f=>f.size<=25*1024*1024);
+  preview.innerHTML=''; status.textContent='';
+  files.forEach(f=>{
+    const div=document.createElement('div'); div.className='preview-item';
+    const img=document.createElement('img'); img.src=URL.createObjectURL(f); img.alt=f.name;
+    const name=document.createElement('div'); name.textContent=f.name;
+    div.appendChild(img); div.appendChild(name); preview.appendChild(div);
+  });
+  if(!files.length) status.textContent='No valid files selected (max 25MB each).';
+}
+
+convertBtn.onclick = async ()=>{
+  if(!files.length) return alert('Select files first!');
+  status.textContent='Generating PDF...';
+  const pdf = new jsPDF();
+  for(let i=0;i<files.length;i++){
+    let f = files[i];
+    try{
+      if(/\.(heic|heif)$/i.test(f.name.toLowerCase())){
+        f = await heic2any({ blob:f, toType:'image/jpeg', quality:0.95 });
+      }
+      const imgData = await fileToDataURL(f);
+      const img = await loadImage(imgData);
+      const ratio = img.width/img.height;
+      const pdfWidth = pdf.internal.pageSize.getWidth() - 20;
+      const pdfHeight = pdfWidth / ratio;
+      if(i>0) pdf.addPage();
+      pdf.addImage(imgData,'JPEG',10,10,pdfWidth,pdfHeight);
+    }catch(err){console.error(err);}
+  }
+  pdf.save('images.pdf');
+  status.textContent='PDF generated!';
+};
+
+clearBtn.onclick=()=>{
+  files=[]; preview.innerHTML=''; status.textContent=''; fileInput.value='';
+};
+
+function fileToDataURL(blob){return new Promise((res,rej)=>{const r=new FileReader(); r.onload=()=>res(r.result); r.onerror=rej; r.readAsDataURL(blob);});}
+function loadImage(src){return new Promise((res,rej)=>{const img=new Image(); img.onload=()=>res(img); img.onerror=rej; img.src=src;});}
+</script>
+</body>
+</html>

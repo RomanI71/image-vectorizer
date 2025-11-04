@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Image to Text — All Language OCR + DOCX Download</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+    :root{--bg:#f8fafc;--card:#fff;--accent:#3498db;--muted:#6b7280}
+    *{box-sizing:border-box}
+    body{font-family:Inter,system-ui,-apple-system,'Segoe UI',Roboto,Helvetica,Arial; background:var(--bg); margin:0; color:#0f172a}
+    .wrap{max-width:980px;margin:36px auto;padding:20px}
+    .header{display:flex;justify-content:space-between;align-items:center;margin-bottom:18px}
+    .logo{display:flex;gap:12px;align-items:center}
+    h1{font-size:20px;margin:0}
+    p.lead{color:var(--muted);margin:6px 0 0}
+    .card{background:var(--card);border-radius:12px;padding:20px;box-shadow:0 6px 20px rgba(2,6,23,0.06)}
+    .upload-box{border:2px dashed rgba(15,23,42,0.08);border-radius:10px;padding:28px;display:flex;gap:20px;align-items:center;justify-content:center;flex-direction:column;cursor:pointer}
+    .btn{display:inline-flex;align-items:center;gap:8px;padding:10px 14px;border-radius:8px;border:none;cursor:pointer;font-weight:600}
+    .btn-primary{background:var(--accent);color:#fff}
+    .btn-secondary{background:#111827;color:#fff}
+    .grid{display:grid;grid-template-columns:1fr 360px;gap:18px;margin-top:18px}
+    textarea{width:100%;min-height:240px;padding:12px;border-radius:8px;border:1px solid #e6edf3;resize:vertical;font-family:inherit}
+    .progress{height:8px;background:#eef2f7;border-radius:8px;overflow:hidden}
+    .progress > i{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--accent),#f39c12)}
+    footer{text-align:center;margin-top:20px;color:var(--muted);font-size:13px}
+    select{padding:8px;border-radius:8px;border:1px solid #e6edf3;width:100%}
+    @media (max-width:900px){.grid{grid-template-columns:1fr}}
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="header">
+      <div class="logo">
+        <i class="fa fa-globe" style="font-size:28px;color:var(--accent)"></i>
+        <div>
+          <h1>Image to Text (All Languages OCR)</h1>
+          <p class="lead">Extract text and download as TXT, DOCX, or PDF</p>
+        </div>
+      </div>
+      <a class="btn btn-secondary" href="index.html"><i class="fa fa-arrow-left"></i> Back</a>
+    </div>
+
+    <div class="card">
+      <div class="upload-box" id="uploadBox">
+        <div style="text-align:center">
+          <i class="fa fa-image" style="font-size:36px;color:var(--accent)"></i>
+          <h3>Drag & drop or select an image</h3>
+          <p class="muted">Supported: JPG, PNG, WebP — Max 25MB</p>
+        </div>
+        <button id="selectBtn" class="btn btn-primary"><i class="fa fa-folder-open"></i> Select Image</button>
+        <input id="fileInput" type="file" accept="image/*" style="display:none">
+      </div>
+
+      <div class="grid">
+        <div>
+          <div class="card">
+            <div style="text-align:center">
+              <img id="previewImg" src="" style="max-width:100%;max-height:360px;display:none;border-radius:8px;background:#f3f4f6;padding:8px">
+              <div id="placeholder" style="color:#6b7280">Preview will appear here</div>
+            </div>
+          </div>
+
+          <div class="card">
+            <label><b>Select OCR Language:</b></label>
+            <select id="langSelect">
+              <option value="eng" selected>English</option>
+              <option value="ben">Bengali (বাংলা)</option>
+              <option value="hin">Hindi (हिन्दी)</option>
+              <option value="ara">Arabic (العربية)</option>
+              <option value="fra">French</option>
+              <option value="deu">German</option>
+              <option value="spa">Spanish</option>
+              <option value="por">Portuguese</option>
+              <option value="ita">Italian</option>
+              <option value="rus">Russian</option>
+              <option value="jpn">Japanese</option>
+              <option value="kor">Korean</option>
+              <option value="chi_sim">Chinese (Simplified)</option>
+              <option value="chi_tra">Chinese (Traditional)</option>
+              <option value="vie">Vietnamese</option>
+              <option value="tha">Thai</option>
+              <option value="tam">Tamil</option>
+              <option value="tel">Telugu</option>
+              <option value="kan">Kannada</option>
+              <option value="mal">Malayalam</option>
+              <option value="nep">Nepali</option>
+              <option value="sin">Sinhala</option>
+              <option value="urd">Urdu</option>
+              <option value="tur">Turkish</option>
+              <option value="nld">Dutch</option>
+              <option value="swe">Swedish</option>
+              <option value="nor">Norwegian</option>
+              <option value="fin">Finnish</option>
+              <option value="dan">Danish</option>
+              <option value="pol">Polish</option>
+              <option value="ces">Czech</option>
+              <option value="hun">Hungarian</option>
+              <option value="ukr">Ukrainian</option>
+              <option value="heb">Hebrew</option>
+              <option value="grc">Greek</option>
+              <option value="ind">Indonesian</option>
+              <option value="msa">Malay</option>
+              <option value="fil">Filipino</option>
+              <option value="slv">Slovenian</option>
+              <option value="slk">Slovak</option>
+              <option value="ron">Romanian</option>
+              <option value="bul">Bulgarian</option>
+              <option value="aze">Azerbaijani</option>
+              <option value="uzb">Uzbek</option>
+              <option value="kaz">Kazakh</option>
+              <option value="pus">Pashto</option>
+              <option value="other">Other (Manual Code)</option>
+            </select>
+
+            <input id="customLang" type="text" placeholder="Enter language code manually (e.g. amh)" style="display:none;margin-top:10px;padding:8px;border-radius:8px;border:1px solid #e6edf3;width:100%">
+            <button id="ocrBtn" class="btn btn-primary" style="margin-top:10px"><i class="fa fa-file-alt"></i> Extract Text</button>
+            <button id="clearBtn" class="btn" style="margin-top:8px">Reset</button>
+          </div>
+        </div>
+
+        <aside class="card">
+          <strong>OCR Result</strong>
+          <div class="progress"><i id="bar"></i></div>
+          <textarea id="outText" placeholder="Extracted text will appear here..." readonly></textarea>
+          <button id="copyBtn" class="btn btn-secondary" style="margin-top:10px;width:100%"><i class="fa fa-copy"></i> Copy Text</button>
+
+          <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-top:15px">
+            <label for="fileType" style="font-weight:600;">Download as:</label>
+            <select id="fileType">
+              <option value="txt">.txt</option>
+              <option value="docx">.docx (Word)</option>
+              <option value="pdf">.pdf</option>
+            </select>
+            <button id="downloadBtn" class="btn btn-primary"><i class="fa fa-download"></i> Download</button>
+          </div>
+        </aside>
+      </div>
+    </div>
+
+    <footer>&copy; 2025 iLoveIMG Clone — All Language OCR</footer>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/tesseract.js@4.1.1/dist/tesseract.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.10/pdfmake.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.10/vfs_fonts.js"></script>
+
+  <script>
+    const fileInput=document.getElementById('fileInput');
+    const selectBtn=document.getElementById('selectBtn');
+    const previewImg=document.getElementById('previewImg');
+    const placeholder=document.getElementById('placeholder');
+    const langSelect=document.getElementById('langSelect');
+    const customLang=document.getElementById('customLang');
+    const ocrBtn=document.getElementById('ocrBtn');
+    const bar=document.getElementById('bar');
+    const outText=document.getElementById('outText');
+    const clearBtn=document.getElementById('clearBtn');
+    const copyBtn=document.getElementById('copyBtn');
+    const fileType=document.getElementById('fileType');
+    const downloadBtn=document.getElementById('downloadBtn');
+    let currentFile=null;
+
+    langSelect.addEventListener('change',()=>{customLang.style.display=(langSelect.value==='other')?'block':'none';});
+    selectBtn.onclick=()=>fileInput.click();
+    fileInput.onchange=e=>handleFiles(e.target.files);
+
+    function handleFiles(files){
+      const file=files[0];
+      if(!file||!file.type.startsWith('image/'))return alert('Please select an image.');
+      currentFile=file;
+      const r=new FileReader();
+      r.onload=e=>{
+        previewImg.src=e.target.result;
+        previewImg.style.display='block';
+        placeholder.style.display='none';
+      };
+      r.readAsDataURL(file);
+    }
+
+    ocrBtn.onclick=async()=>{
+      if(!currentFile)return alert('No image selected.');
+      let lang=langSelect.value;
+      if(lang==='other')lang=customLang.value.trim()||'eng';
+      bar.style.width='5%';outText.value='Processing...';
+      const worker=await Tesseract.createWorker({
+        langPath:'https://tessdata.projectnaptha.com/4.0.0_best',
+        logger:m=>{if(m.progress)bar.style.width=Math.min(100,Math.round(m.progress*100))+'%';}
+      });
+      await worker.load();await worker.loadLanguage(lang);await worker.initialize(lang);
+      const dataURL=await fileToDataURL(currentFile);
+      const {data}=await worker.recognize(dataURL);
+      outText.value=data.text.trim()||'(No text detected)';
+      bar.style.width='100%';
+      await worker.terminate();
+    };
+
+    clearBtn.onclick=()=>{previewImg.style.display='none';placeholder.style.display='block';outText.value='';bar.style.width='0%';};
+    copyBtn.onclick=async()=>{if(!outText.value)return;await navigator.clipboard.writeText(outText.value);alert('Copied!');};
+
+    downloadBtn.onclick=()=>{
+      if(!outText.value)return alert('No text to download.');
+      const type=fileType.value;
+      if(type==='txt'){
+        const blob=new Blob([outText.value],{type:'text/plain'});
+        downloadBlob(blob,'ocr_output.txt');
+      }else if(type==='pdf'){
+        const docDef={content:[{text:outText.value,fontSize:12}]};
+        pdfMake.createPdf(docDef).download('ocr_output.pdf');
+      }else if(type==='docx'){
+        const header=`<?xml version="1.0" encoding="UTF-8"?><w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"><w:body><w:p><w:r><w:t>`;
+        const footer=`</w:t></w:r></w:p></w:body></w:document>`;
+        const content=outText.value.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
+        const xml=header+content+footer;
+        const blob=new Blob([xml],{type:'application/vnd.openxmlformats-officedocument.wordprocessingml.document'});
+        downloadBlob(blob,'ocr_output.docx');
+      }
+    };
+
+    function downloadBlob(blob,filename){
+      const a=document.createElement('a');
+      a.href=URL.createObjectURL(blob);
+      a.download=filename;
+      a.click();
+      setTimeout(()=>URL.revokeObjectURL(a.href),1000);
+    }
+
+    function fileToDataURL(file){
+      return new Promise((res,rej)=>{
+        const r=new FileReader();
+        r.onload=e=>res(e.target.result);
+        r.onerror=rej;
+        r.readAsDataURL(file);
+      });
+    }
+  </script>
+</body>
+</html>

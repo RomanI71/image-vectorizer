@@ -1,0 +1,869 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Image to SVG Vectorizer — iLoveIMG Clone</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+    :root {
+      --bg: #f8fafc;
+      --card: #fff;
+      --accent: #3498db;
+      --muted: #6b7280;
+      --success: #10b981;
+      --error: #ef4444;
+    }
+    
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+    
+    body {
+      font-family: Inter, system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+      background: var(--bg);
+      color: #0f172a;
+      line-height: 1.6;
+    }
+    
+    .wrap {
+      max-width: 980px;
+      margin: 36px auto;
+      padding: 20px;
+    }
+    
+    .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 18px;
+    }
+    
+    .logo {
+      display: flex;
+      gap: 12px;
+      align-items: center;
+    }
+    
+    .logo-icon {
+      font-size: 28px;
+      color: var(--accent);
+    }
+    
+    h1 {
+      font-size: 20px;
+      margin: 0;
+      font-weight: 600;
+    }
+    
+    p.lead {
+      color: var(--muted);
+      margin: 6px 0 0;
+      font-size: 14px;
+    }
+    
+    .card {
+      background: var(--card);
+      border-radius: 12px;
+      padding: 20px;
+      box-shadow: 0 6px 20px rgba(2, 6, 23, 0.06);
+      margin-bottom: 16px;
+    }
+
+    /* File Info Card - Card এর বাইরে */
+    .file-info-card {
+      background: var(--card);
+      border-radius: 12px;
+      padding: 16px 20px;
+      box-shadow: 0 6px 20px rgba(2, 6, 23, 0.06);
+      margin-bottom: 16px;
+      border-left: 4px solid var(--accent);
+      display: none;
+    }
+
+    .file-info-header {
+      display: flex;
+      justify-content: between;
+      align-items: center;
+      margin-bottom: 8px;
+    }
+
+    .file-name {
+      font-weight: 600;
+      font-size: 16px;
+      color: #0f172a;
+    }
+
+    .file-size {
+      color: var(--muted);
+      font-size: 14px;
+    }
+    
+    .upload-box {
+      border: 2px dashed rgba(15, 23, 42, 0.08);
+      border-radius: 10px;
+      padding: 28px;
+      display: flex;
+      gap: 20px;
+      align-items: center;
+      justify-content: center;
+      flex-direction: column;
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+    
+    .upload-box.highlight {
+      background: linear-gradient(90deg, rgba(52, 152, 219, 0.06), rgba(231, 76, 60, 0.03));
+      border-color: var(--accent);
+    }
+    
+    .upload-actions {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      margin-top: 10px;
+    }
+    
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 14px;
+      border-radius: 8px;
+      border: none;
+      cursor: pointer;
+      font-weight: 600;
+      font-size: 14px;
+      transition: all 0.3s ease;
+      text-decoration: none;
+    }
+    
+    .btn:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+    
+    .btn-primary {
+      background: var(--accent);
+      color: #fff;
+    }
+    
+    .btn-primary:hover:not(:disabled) {
+      background: #2980b9;
+      transform: translateY(-1px);
+    }
+    
+    .btn-secondary {
+      background: #111827;
+      color: #fff;
+    }
+    
+    .btn-secondary:hover {
+      background: #000;
+    }
+    
+    .btn-success {
+      background: var(--success);
+      color: #fff;
+    }
+    
+    .btn-success:hover {
+      background: #0da271;
+    }
+    
+    .btn-outline {
+      background: transparent;
+      border: 2px solid #e2e8f0;
+      color: #64748b;
+    }
+    
+    .btn-outline:hover {
+      border-color: var(--accent);
+      color: var(--accent);
+    }
+    
+    .muted {
+      color: var(--muted);
+    }
+    
+    .small {
+      font-size: 12px;
+    }
+    
+    .grid {
+      display: grid;
+      grid-template-columns: 1fr 360px;
+      gap: 18px;
+      margin-top: 18px;
+    }
+    
+    .preview-wrap {
+      position: relative;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      background: #f3f4f6;
+      border-radius: 8px;
+      padding: 10px;
+      overflow: hidden;
+      min-height: 260px;
+    }
+    
+    .preview-img {
+      max-width: 100%;
+      max-height: 400px;
+      border-radius: 6px;
+      object-fit: contain;
+      display: block;
+    }
+    
+    .svg-preview {
+      max-width: 100%;
+      max-height: 400px;
+      border-radius: 6px;
+      display: none;
+    }
+    
+    .svg-preview svg {
+      max-width: 100%;
+      max-height: 400px;
+    }
+    
+    .settings-panel {
+      background: #f8fafc;
+      border-radius: 8px;
+      padding: 16px;
+      margin: 16px 0;
+    }
+    
+    .setting-group {
+      margin-bottom: 16px;
+    }
+    
+    .setting-label {
+      display: block;
+      margin-bottom: 8px;
+      font-weight: 600;
+      font-size: 14px;
+      color: #374151;
+    }
+    
+    .range-container {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    
+    .range-value {
+      min-width: 40px;
+      text-align: center;
+      font-weight: 600;
+      color: var(--accent);
+      font-size: 14px;
+    }
+    
+    input[type="range"] {
+      flex: 1;
+      height: 6px;
+      border-radius: 3px;
+      background: #e2e8f0;
+      outline: none;
+      -webkit-appearance: none;
+    }
+    
+    input[type="range"]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      width: 18px;
+      height: 18px;
+      border-radius: 50%;
+      background: var(--accent);
+      cursor: pointer;
+    }
+    
+    input[type="color"] {
+      width: 100%;
+      height: 40px;
+      border: 2px solid #e2e8f0;
+      border-radius: 6px;
+      cursor: pointer;
+    }
+    
+    .mode-selector {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 16px;
+    }
+    
+    .mode-btn {
+      flex: 1;
+      text-align: center;
+      padding: 10px;
+      border: 2px solid #e2e8f0;
+      border-radius: 6px;
+      background: white;
+      cursor: pointer;
+      font-weight: 500;
+      font-size: 13px;
+      transition: all 0.3s ease;
+    }
+    
+    .mode-btn.active {
+      border-color: var(--accent);
+      background: var(--accent);
+      color: white;
+    }
+    
+    .progress-bar {
+      height: 6px;
+      background: #e2e8f0;
+      border-radius: 3px;
+      overflow: hidden;
+      margin-bottom: 16px;
+    }
+    
+    .progress-fill {
+      height: 100%;
+      background: linear-gradient(90deg, var(--accent), #3b82f6);
+      width: 0%;
+      transition: width 0.3s ease;
+      border-radius: 3px;
+    }
+    
+    .result-area {
+      background: #f8fafc;
+      border: 1px solid #e2e8f0;
+      border-radius: 6px;
+      padding: 12px;
+      font-family: 'Courier New', monospace;
+      font-size: 12px;
+      line-height: 1.4;
+      max-height: 200px;
+      overflow-y: auto;
+      white-space: pre-wrap;
+      word-break: break-all;
+    }
+    
+    .action-buttons {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin-top: 16px;
+    }
+    
+    .status-info {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      margin-top: 16px;
+    }
+    
+    .status-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 8px 0;
+      border-bottom: 1px solid #f1f5f9;
+    }
+    
+    .status-item:last-child {
+      border-bottom: none;
+    }
+    
+    .message {
+      padding: 12px;
+      border-radius: 6px;
+      margin: 10px 0;
+      font-size: 14px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    
+    .message.success {
+      background: #d1fae5;
+      color: #065f46;
+      border: 1px solid #a7f3d0;
+    }
+    
+    .message.error {
+      background: #fee2e2;
+      color: #991b1b;
+      border: 1px solid #fca5a5;
+    }
+    
+    .message.info {
+      background: #dbeafe;
+      color: #1e40af;
+      border: 1px solid #93c5fd;
+    }
+    
+    footer {
+      margin-top: 20px;
+      text-align: center;
+      color: var(--muted);
+      font-size: 13px;
+    }
+    
+    .hidden {
+      display: none !important;
+    }
+    
+    @media (max-width: 900px) {
+      .grid {
+        grid-template-columns: 1fr;
+      }
+      
+      .action-buttons {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="header">
+      <div class="logo">
+        <i class="fas fa-vector-square logo-icon"></i>
+        <div>
+          <h1>Image to SVG Vectorizer</h1>
+          <p class="lead">Convert images to scalable vector graphics</p>
+        </div>
+      </div>
+      <div class="actions">
+        <a class="btn btn-secondary" href="index.html"><i class="fa fa-arrow-left"></i> Back</a>
+      </div>
+    </div>
+
+    <!-- File Info Card - Card এর বাইরে -->
+    <div class="file-info-card" id="fileInfoCard">
+      <div class="file-info-header">
+        <span class="file-name" id="fileName">filename.jpg</span>
+        <span class="file-size" id="fileSize">0 KB</span>
+      </div>
+      <div class="file-info-meta">
+        <span id="fileStatus" class="muted">Ready to vectorize</span>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="upload-box" id="uploadBox">
+        <div style="text-align:center">
+          <i class="fa fa-cloud-upload" style="font-size:36px;color:var(--accent)"></i>
+          <h3 style="margin:8px 0 6px">Drag & drop or select an image</h3>
+          <p class="small muted">JPG, PNG, WebP — max 25MB</p>
+        </div>
+        <div class="upload-actions">
+          <button id="selectBtn" class="btn btn-primary"><i class="fa fa-folder-open"></i> Select Image</button>
+          <input id="fileInput" type="file" accept="image/*" style="display:none">
+        </div>
+      </div>
+
+      <div class="grid" style="margin-top:18px">
+        <div class="card">
+          <div class="preview-wrap">
+            <img id="previewImg" class="preview-img" alt="preview" src="">
+            <div id="svgPreview" class="svg-preview"></div>
+            <div id="placeholder" style="text-align:center;color:var(--muted);padding:26px">
+              <i class="fas fa-image" style="font-size:48px;margin-bottom:16px;opacity:0.5"></i>
+              <p>Preview will appear here</p>
+            </div>
+          </div>
+
+          <div class="settings-panel">
+            <!-- Mode Selector -->
+            <div class="mode-selector">
+              <div class="mode-btn active" data-mode="threshold">Black & White</div>
+              <div class="mode-btn" data-mode="colorful">Colorful Vector</div>
+            </div>
+
+            <!-- Threshold Settings -->
+            <div id="thresholdSettings">
+              <div class="setting-group">
+                <label class="setting-label">Threshold Level</label>
+                <div class="range-container">
+                  <input type="range" id="thresholdInput" min="0" max="255" value="128">
+                  <span id="thresholdValue" class="range-value">128</span>
+                </div>
+                <div style="display:flex;justify-content:space-between;font-size:11px;color:var(--muted);margin-top:4px">
+                  <span>Light</span>
+                  <span>Dark</span>
+                </div>
+              </div>
+              
+              <div class="setting-group">
+                <label class="setting-label">Stroke Color</label>
+                <input type="color" id="strokeColor" value="#000000">
+              </div>
+            </div>
+
+            <!-- Colorful Settings -->
+            <div id="colorfulSettings" class="hidden">
+              <div class="setting-group">
+                <label class="setting-label">Color Palette Size</label>
+                <div class="range-container">
+                  <input type="range" id="colorPalette" min="8" max="32" value="16">
+                  <span id="paletteValue" class="range-value">16</span>
+                </div>
+                <div style="display:flex;justify-content:space-between;font-size:11px;color:var(--muted);margin-top:4px">
+                  <span>Fewer Colors</span>
+                  <span>More Colors</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Action Buttons -->
+            <div style="display:flex;gap:10px;margin-top:16px;flex-wrap:wrap">
+              <button id="vectorizeBtn" class="btn btn-primary" style="flex:1">
+                <i class="fas fa-vector-square"></i> Vectorize Image
+              </button>
+              <button id="resetBtn" class="btn btn-outline">Reset</button>
+            </div>
+          </div>
+
+          <!-- Message Area -->
+          <div id="messageArea"></div>
+        </div>
+
+        <aside class="card" style="height:fit-content">
+          <h3 style="margin-bottom:16px;font-size:16px">SVG Result</h3>
+          
+          <!-- Progress Bar -->
+          <div class="progress-bar">
+            <div class="progress-fill" id="progressFill"></div>
+          </div>
+
+          <!-- Result Display -->
+          <div class="result-area" id="resultText">SVG code will appear here...</div>
+
+          <!-- Action Buttons -->
+          <div class="action-buttons">
+            <button id="copyBtn" class="btn btn-success">
+              <i class="fas fa-copy"></i> Copy SVG
+            </button>
+            <button id="downloadBtn" class="btn btn-primary">
+              <i class="fas fa-download"></i> Download
+            </button>
+          </div>
+
+          <!-- Status Info -->
+          <div class="status-info">
+            <div class="status-item">
+              <span><strong>Status:</strong></span>
+              <span id="statusText" class="muted">Ready</span>
+            </div>
+            <div class="status-item">
+              <span><strong>Backend:</strong></span>
+              <span id="backendStatus" class="muted">Checking...</span>
+            </div>
+            <div class="status-item">
+              <span><strong>Mode:</strong></span>
+              <span id="modeInfo" class="muted">Black & White</span>
+            </div>
+          </div>
+        </aside>
+      </div>
+    </div>
+
+    <footer>
+      <p>&copy; 2025 iLoveIMG Clone — Image to SVG Vectorizer</p>
+    </footer>
+  </div>
+
+  <script>
+    // Configuration
+    const BACKEND_URL = 'http://localhost:8000';
+    
+    // DOM Elements
+    const uploadBox = document.getElementById('uploadBox');
+    const fileInput = document.getElementById('fileInput');
+    const selectBtn = document.getElementById('selectBtn');
+    const previewImg = document.getElementById('previewImg');
+    const svgPreview = document.getElementById('svgPreview');
+    const placeholder = document.getElementById('placeholder');
+    const modeBtns = document.querySelectorAll('.mode-btn');
+    const thresholdSettings = document.getElementById('thresholdSettings');
+    const colorfulSettings = document.getElementById('colorfulSettings');
+    const thresholdInput = document.getElementById('thresholdInput');
+    const thresholdValue = document.getElementById('thresholdValue');
+    const strokeColor = document.getElementById('strokeColor');
+    const colorPalette = document.getElementById('colorPalette');
+    const paletteValue = document.getElementById('paletteValue');
+    const vectorizeBtn = document.getElementById('vectorizeBtn');
+    const resetBtn = document.getElementById('resetBtn');
+    const progressFill = document.getElementById('progressFill');
+    const resultText = document.getElementById('resultText');
+    const copyBtn = document.getElementById('copyBtn');
+    const downloadBtn = document.getElementById('downloadBtn');
+    const messageArea = document.getElementById('messageArea');
+    const statusText = document.getElementById('statusText');
+    const backendStatus = document.getElementById('backendStatus');
+    const modeInfo = document.getElementById('modeInfo');
+    
+    // File Info Card Elements
+    const fileInfoCard = document.getElementById('fileInfoCard');
+    const fileName = document.getElementById('fileName');
+    const fileSize = document.getElementById('fileSize');
+    const fileStatus = document.getElementById('fileStatus');
+
+    let currentFile = null;
+    let currentMode = 'threshold';
+
+    // Initialize
+    document.addEventListener('DOMContentLoaded', function() {
+      checkBackendStatus();
+      setupEventListeners();
+      updateThresholdValue();
+      updatePaletteValue();
+    });
+
+    function setupEventListeners() {
+      // File selection
+      selectBtn.addEventListener('click', () => fileInput.click());
+      fileInput.addEventListener('change', handleFileSelect);
+      
+      // Drag and drop
+      ['dragenter', 'dragover'].forEach(evt => {
+        uploadBox.addEventListener(evt, e => {
+          e.preventDefault();
+          uploadBox.classList.add('highlight');
+        });
+      });
+
+      ['dragleave', 'drop'].forEach(evt => {
+        uploadBox.addEventListener(evt, e => {
+          e.preventDefault();
+          uploadBox.classList.remove('highlight');
+        });
+      });
+
+      uploadBox.addEventListener('drop', e => {
+        if (e.dataTransfer.files.length) {
+          handleFiles(e.dataTransfer.files);
+        }
+      });
+
+      // Mode selection
+      modeBtns.forEach(btn => {
+        btn.addEventListener('click', () => {
+          modeBtns.forEach(b => b.classList.remove('active'));
+          btn.classList.add('active');
+          currentMode = btn.dataset.mode;
+          modeInfo.textContent = currentMode === 'threshold' ? 'Black & White' : 'Colorful Vector';
+          
+          if (currentMode === 'threshold') {
+            thresholdSettings.classList.remove('hidden');
+            colorfulSettings.classList.add('hidden');
+          } else {
+            thresholdSettings.classList.add('hidden');
+            colorfulSettings.classList.remove('hidden');
+          }
+        });
+      });
+
+      // Settings updates
+      thresholdInput.addEventListener('input', updateThresholdValue);
+      colorPalette.addEventListener('input', updatePaletteValue);
+      
+      // Actions
+      vectorizeBtn.addEventListener('click', vectorizeImage);
+      resetBtn.addEventListener('click', resetAll);
+      copyBtn.addEventListener('click', copySVG);
+      downloadBtn.addEventListener('click', downloadSVG);
+    }
+
+    function updateThresholdValue() {
+      thresholdValue.textContent = thresholdInput.value;
+    }
+
+    function updatePaletteValue() {
+      paletteValue.textContent = colorPalette.value;
+    }
+
+    function handleFileSelect(e) {
+      const files = e.target.files;
+      if (files.length) {
+        handleFiles(files);
+      }
+    }
+
+    function handleFiles(files) {
+      const file = files[0];
+      if (!file || !file.type.startsWith('image/')) {
+        showMessage('Please select a valid image file (JPG, PNG, WebP).', 'error');
+        return;
+      }
+
+      currentFile = file;
+      
+      // Show file info card
+      fileName.textContent = file.name;
+      fileSize.textContent = humanSize(file.size);
+      fileStatus.textContent = 'Ready to vectorize';
+      fileInfoCard.style.display = 'block';
+      
+      statusText.textContent = 'Loaded';
+      
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        previewImg.src = e.target.result;
+        previewImg.style.display = 'block';
+        svgPreview.style.display = 'none';
+        svgPreview.innerHTML = '';
+        placeholder.style.display = 'none';
+        showMessage('Image loaded successfully! Adjust settings and click "Vectorize Image".', 'success');
+      };
+      
+      reader.readAsDataURL(file);
+    }
+
+    function humanSize(bytes) {
+      if (bytes === 0) return '0 B';
+      const k = 1024;
+      const sizes = ['B', 'KB', 'MB', 'GB'];
+      const i = Math.floor(Math.log(bytes) / Math.log(k));
+      return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+    }
+
+    async function vectorizeImage() {
+      if (!currentFile) {
+        showMessage('Please select an image first.', 'error');
+        return;
+      }
+
+      showMessage('Processing your image...', 'info');
+      fileStatus.textContent = 'Processing...';
+      progressFill.style.width = '30%';
+      vectorizeBtn.disabled = true;
+      statusText.textContent = 'Processing...';
+
+      const formData = new FormData();
+      formData.append('file', currentFile);
+      formData.append('mode', currentMode);
+
+      if (currentMode === 'threshold') {
+        formData.append('threshold', thresholdInput.value);
+        formData.append('stroke_color', strokeColor.value);
+      } else {
+        formData.append('color_palette_size', colorPalette.value);
+      }
+
+      try {
+        const response = await fetch(`${BACKEND_URL}/vectorize`, {
+          method: 'POST',
+          body: formData
+        });
+
+        progressFill.style.width = '70%';
+
+        if (!response.ok) {
+          const error = await response.json();
+          throw new Error(error.detail || 'Vectorization failed');
+        }
+
+        const svgContent = await response.text();
+        
+        // Display results
+        resultText.textContent = svgContent;
+        svgPreview.innerHTML = svgContent;
+        svgPreview.style.display = 'block';
+        previewImg.style.display = 'none';
+        
+        progressFill.style.width = '100%';
+        statusText.textContent = 'Completed';
+        fileStatus.textContent = 'Vectorization complete';
+        showMessage('Vectorization completed successfully!', 'success');
+
+      } catch (error) {
+        console.error('Error:', error);
+        showMessage(`Error: ${error.message}`, 'error');
+        progressFill.style.width = '0%';
+        statusText.textContent = 'Error';
+        fileStatus.textContent = 'Vectorization failed';
+      } finally {
+        vectorizeBtn.disabled = false;
+        setTimeout(() => progressFill.style.width = '0%', 2000);
+      }
+    }
+
+    function resetAll() {
+      fileInput.value = '';
+      currentFile = null;
+      previewImg.style.display = 'none';
+      svgPreview.style.display = 'none';
+      svgPreview.innerHTML = '';
+      placeholder.style.display = 'block';
+      resultText.textContent = 'SVG code will appear here...';
+      progressFill.style.width = '0%';
+      messageArea.innerHTML = '';
+      statusText.textContent = 'Ready';
+      
+      // Hide file info card
+      fileInfoCard.style.display = 'none';
+      
+      showMessage('Ready to start new conversion.', 'info');
+    }
+
+    async function copySVG() {
+      if (!resultText.textContent || resultText.textContent === 'SVG code will appear here...') {
+        showMessage('No SVG code to copy.', 'error');
+        return;
+      }
+
+      try {
+        await navigator.clipboard.writeText(resultText.textContent);
+        showMessage('SVG code copied to clipboard!', 'success');
+      } catch (err) {
+        showMessage('Failed to copy. Please copy manually.', 'error');
+      }
+    }
+
+    function downloadSVG() {
+      if (!resultText.textContent || resultText.textContent === 'SVG code will appear here...') {
+        showMessage('No SVG code to download.', 'error');
+        return;
+      }
+
+      const blob = new Blob([resultText.textContent], { type: 'image/svg+xml' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `vectorized_${currentFile?.name.replace(/\.[^/.]+$/, "") || 'image'}.svg`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      showMessage('SVG file downloaded successfully!', 'success');
+    }
+
+    async function checkBackendStatus() {
+      try {
+        backendStatus.textContent = 'Checking...';
+        const response = await fetch(`${BACKEND_URL}/health`);
+        const data = await response.json();
+        backendStatus.textContent = 'Connected ✓';
+        backendStatus.style.color = 'var(--success)';
+      } catch (error) {
+        backendStatus.textContent = 'Disconnected ✗';
+        backendStatus.style.color = 'var(--error)';
+      }
+    }
+
+    function showMessage(text, type) {
+      const icon = type === 'success' ? 'fa-check-circle' : 
+                   type === 'error' ? 'fa-exclamation-circle' : 'fa-info-circle';
+      
+      messageArea.innerHTML = `
+        <div class="message ${type}">
+          <i class="fas ${icon}"></i>
+          ${text}
+        </div>
+      `;
+    }
+
+    // Auto-check backend status every 30 seconds
+    setInterval(checkBackendStatus, 30000);
+  </script>
+</body>
+</html>

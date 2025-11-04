@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>HEIC to JPG Converter — Free Online Tool</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <script src="https://cdn.jsdelivr.net/npm/heic2any@0.0.3/dist/heic2any.min.js"></script>
+  <style>
+    :root {
+      --bg: #f8fafc;
+      --card: #fff;
+      --accent: #3498db;
+      --muted: #6b7280;
+      --border: #e5e7eb;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Inter', system-ui, sans-serif;
+      background: var(--bg);
+      color: #0f172a;
+      line-height: 1.6;
+    }
+    .wrap { max-width: 980px; margin: 40px auto; padding: 20px; }
+    .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+    .logo { display: flex; gap: 12px; align-items: center; }
+    h1 { font-size: 22px; margin: 0; }
+    p.lead { color: var(--muted); margin-top: 5px; }
+    .card {
+      background: var(--card);
+      border-radius: 12px;
+      padding: 20px;
+      box-shadow: 0 6px 20px rgba(2,6,23,0.06);
+    }
+    .upload-box {
+      border: 2px dashed rgba(15,23,42,0.08);
+      border-radius: 10px;
+      padding: 28px;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+    .upload-box:hover { background: rgba(52,152,219,0.06); border-color: var(--accent); }
+    .btn {
+      display: inline-flex; align-items: center; gap: 8px;
+      padding: 10px 14px; border-radius: 8px; border: none; cursor: pointer;
+      font-weight: 600; transition: all 0.2s ease;
+    }
+    .btn-primary { background: var(--accent); color: #fff; }
+    .btn-secondary { background: #111827; color: #fff; }
+    .btn:hover { transform: translateY(-2px); box-shadow: 0 4px 8px rgba(0,0,0,0.1); }
+    .grid { display: grid; grid-template-columns: 1fr 360px; gap: 18px; margin-top: 20px; }
+    img { max-width: 100%; border-radius: 10px; }
+    .progress { height: 8px; background: #eef2f7; border-radius: 8px; overflow: hidden; margin: 10px 0; }
+    .progress > i { display: block; height: 100%; width: 0; background: linear-gradient(90deg, var(--accent), #f39c12); transition: width 0.3s ease; }
+    footer { text-align: center; margin-top: 20px; color: var(--muted); font-size: 13px; }
+    .file-info { background-color: rgba(0,0,0,0.03); padding: 10px 15px; border-radius: 8px; margin-top: 10px; font-size: 14px; }
+    .placeholder { color: var(--muted); text-align: center; padding: 40px 20px; border: 1px dashed var(--border); border-radius: 8px; background-color: rgba(0,0,0,0.02); }
+    @media (max-width:900px) { .grid { grid-template-columns: 1fr; } }
+  </style>
+</head>
+<body>
+
+  <div class="wrap">
+    <div class="header">
+      <div class="logo">
+        <i class="fa fa-image" style="font-size:28px;color:var(--accent)"></i>
+        <div>
+          <h1>HEIC to JPG Converter</h1>
+          <p class="lead">Convert your HEIC images to high-quality JPG instantly.</p>
+        </div>
+      </div>
+      <a href="index.html" class="btn btn-secondary"><i class="fa fa-arrow-left"></i> Back</a>
+    </div>
+
+    <div class="card">
+      <div class="upload-box" id="uploadBox">
+        <i class="fa fa-file-image" style="font-size:36px;color:var(--accent)"></i>
+        <h3>Drag & Drop or Select a HEIC image</h3>
+        <p class="muted">Supported formats: HEIC, HEIF — Max 25MB</p>
+        <button id="selectBtn" class="btn btn-primary"><i class="fa fa-folder-open"></i> Select File</button>
+        <input id="fileInput" type="file" accept=".heic,.heif,image/heic,image/heif" style="display:none">
+      </div>
+
+      <div class="grid">
+        <div class="card">
+          <h3>Original Image</h3>
+          <div id="inputBox" class="placeholder">No image selected yet.</div>
+          <img id="inputPreview" style="display:none" />
+          <div id="inputInfo" class="file-info" style="display:none"></div>
+        </div>
+
+        <aside class="card">
+          <h3>Converted Image (JPG)</h3>
+          <div class="progress"><i id="bar"></i></div>
+          <div id="outputBox" class="placeholder">No conversion yet.</div>
+          <img id="outputPreview" style="display:none" />
+          <div id="outputInfo" class="file-info" style="display:none"></div>
+          <button id="convertBtn" class="btn btn-primary" style="margin-top:10px;width:100%;"><i class="fa fa-sync"></i> Convert to JPG</button>
+          <button id="downloadBtn" class="btn btn-secondary" style="margin-top:8px;width:100%;display:none;"><i class="fa fa-download"></i> Download JPG</button>
+        </aside>
+      </div>
+    </div>
+
+    <footer>&copy; 2025 iLoveIMG Clone — HEIC to JPG Converter</footer>
+  </div>
+
+  <script>
+    const fileInput = document.getElementById("fileInput");
+    const selectBtn = document.getElementById("selectBtn");
+    const uploadBox = document.getElementById("uploadBox");
+    const inputBox = document.getElementById("inputBox");
+    const inputPreview = document.getElementById("inputPreview");
+    const inputInfo = document.getElementById("inputInfo");
+    const outputBox = document.getElementById("outputBox");
+    const outputPreview = document.getElementById("outputPreview");
+    const outputInfo = document.getElementById("outputInfo");
+    const convertBtn = document.getElementById("convertBtn");
+    const downloadBtn = document.getElementById("downloadBtn");
+    const bar = document.getElementById("bar");
+
+    let heicFile = null;
+    let jpgBlob = null;
+
+    selectBtn.onclick = () => fileInput.click();
+
+    uploadBox.addEventListener("dragover", e => { e.preventDefault(); uploadBox.style.background = "rgba(52,152,219,0.08)"; });
+    uploadBox.addEventListener("dragleave", () => uploadBox.style.background = "transparent");
+    uploadBox.addEventListener("drop", e => {
+      e.preventDefault();
+      uploadBox.style.background = "transparent";
+      if (e.dataTransfer.files.length) handleFile(e.dataTransfer.files[0]);
+    });
+
+    fileInput.onchange = e => { if (e.target.files.length) handleFile(e.target.files[0]); };
+
+    function handleFile(file) {
+      const isHeic = /\.(heic|heif)$/i.test(file.name);
+      if (!isHeic) return alert("Please select a valid HEIC file!");
+      if (file.size > 25*1024*1024) return alert("File too big! Max 25MB.");
+
+      heicFile = file;
+      const url = URL.createObjectURL(file);
+      inputPreview.src = url;
+      inputPreview.style.display = "block";
+      inputBox.style.display = "none";
+      inputInfo.style.display = "block";
+      inputInfo.innerHTML = `<strong>File:</strong> ${file.name} | <strong>Size:</strong> ${(file.size/(1024*1024)).toFixed(2)} MB`;
+      outputPreview.style.display = "none";
+      outputBox.style.display = "block";
+      outputBox.innerHTML = "No conversion yet.";
+      downloadBtn.style.display = "none";
+    }
+
+    convertBtn.onclick = async () => {
+      if (!heicFile) return alert("Select a HEIC file first!");
+      bar.style.width = "20%";
+      convertBtn.innerText = "Converting...";
+      convertBtn.disabled = true;
+
+      try {
+        const result = await heic2any({ blob: heicFile, toType: "image/jpeg", quality: 0.9 });
+        jpgBlob = result;
+        const url = URL.createObjectURL(result);
+        bar.style.width = "70%";
+        outputPreview.src = url;
+        outputPreview.style.display = "block";
+        outputBox.style.display = "none";
+        outputInfo.style.display = "block";
+        outputInfo.innerHTML = `<strong>Format:</strong> JPG | <strong>Size:</strong> ${(result.size/(1024*1024)).toFixed(2)} MB`;
+        downloadBtn.style.display = "block";
+        bar.style.width = "100%";
+        setTimeout(() => bar.style.width = "0%", 1200);
+      } catch (err) {
+        console.error(err);
+        alert("Conversion failed! Try a different file.");
+        bar.style.width = "0%";
+      }
+
+      convertBtn.innerText = "Convert to JPG";
+      convertBtn.disabled = false;
+    };
+
+    downloadBtn.onclick = () => {
+      if (!jpgBlob) return alert("No converted image found!");
+      const a = document.createElement("a");
+      a.href = URL.createObjectURL(jpgBlob);
+      a.download = heicFile.name.replace(/\.(heic|heif)$/i, ".jpg");
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+    };
+  </script>
+</body>
+</html>

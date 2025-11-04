@@ -1,0 +1,417 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Crop Image — iLoveIMG Clone (Fixed)</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+    :root{--bg:#f8fafc;--card:#fff;--accent:#3498db;--muted:#6b7280}
+    *{box-sizing:border-box}
+    body{font-family:Inter,system-ui,-apple-system,'Segoe UI',Roboto,Helvetica,Arial; background:var(--bg); margin:0; color:#0f172a}
+    .wrap{max-width:980px;margin:36px auto;padding:20px}
+    .header{display:flex;justify-content:space-between;align-items:center;margin-bottom:18px}
+    .logo{display:flex;gap:12px;align-items:center}
+    .logo img{height:36px}
+    h1{font-size:20px;margin:0}
+    p.lead{color:var(--muted);margin:6px 0 0}
+    .card{background:var(--card);border-radius:12px;padding:20px;box-shadow:0 6px 20px rgba(2,6,23,0.06)}
+    .upload-box{border:2px dashed rgba(15,23,42,0.08);border-radius:10px;padding:28px;display:flex;gap:20px;align-items:center;justify-content:center;flex-direction:column;cursor:pointer}
+    .upload-box.highlight{background:linear-gradient(90deg,rgba(52,152,219,0.06),rgba(231,76,60,0.03));border-color:var(--accent)}
+    .upload-actions{display:flex;gap:10px;align-items:center}
+    .btn{display:inline-flex;align-items:center;gap:8px;padding:10px 14px;border-radius:8px;border:none;cursor:pointer;font-weight:600}
+    .btn-primary{background:var(--accent);color:#fff}
+    .btn-secondary{background:#111827;color:#fff}
+    .muted{color:var(--muted)}
+    .grid{display:grid;grid-template-columns:1fr 360px;gap:18px;margin-top:18px}
+    .preview-wrap{position:relative;display:flex;justify-content:center;align-items:center;background:#f3f4f6;border-radius:8px;padding:10px;overflow:hidden;min-height:260px}
+    .preview-img{max-width:100%;max-height:600px;border-radius:6px;object-fit:contain;display:block;user-select:none;pointer-events:none}
+    /* Selection box relative to preview-wrap */
+    #selection{position:absolute;border:2px dashed var(--accent);background:rgba(52,152,219,0.14);display:none;touch-action:none}
+    /* small handle for resize (not full resizers; keeps interface simple) */
+    .handle{position:absolute;width:12px;height:12px;background:#fff;border:2px solid var(--accent);border-radius:2px;box-sizing:border-box}
+    .handle.ne{right:-8px;top:-8px;cursor:ne-resize}
+    .handle.nw{left:-8px;top:-8px;cursor:nw-resize}
+    .handle.se{right:-8px;bottom:-8px;cursor:se-resize}
+    .handle.sw{left:-8px;bottom:-8px;cursor:sw-resize}
+    .meta{margin-top:8px;color:var(--muted);font-size:14px}
+    footer{margin-top:20px;text-align:center;color:var(--muted);font-size:13px}
+    @media(max-width:900px){.grid{grid-template-columns:1fr}}
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="header">
+      <div class="logo">
+        <img src="iloveimg-logo.svg" alt="logo">
+        <div>
+          <h1>Crop Image</h1>
+          <p class="lead">Crop images — fixed selection/drawer behavior</p>
+        </div>
+      </div>
+      <div class="actions">
+        <a class="btn btn-secondary" href="index.html"><i class="fa fa-arrow-left"></i> Back</a>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="upload-box" id="uploadBox">
+        <div style="text-align:center">
+          <i class="fa fa-cloud-upload" style="font-size:36px;color:var(--accent)"></i>
+          <h3 style="margin:8px 0 6px">Drag & drop or select an image</h3>
+          <p class="small muted">JPG, PNG, WebP — max 25MB (demo)</p>
+        </div>
+        <div class="upload-actions">
+          <button id="selectBtn" class="btn btn-primary"><i class="fa fa-folder-open"></i> Select Image</button>
+          <input id="fileInput" type="file" accept="image/*" style="display:none">
+          <button id="sampleBtn" class="btn" title="Use sample image">Sample</button>
+        </div>
+      </div>
+
+      <div class="grid" style="margin-top:18px">
+        <div class="card">
+          <div class="preview-wrap" id="previewWrap">
+            <img id="previewImg" class="preview-img" alt="preview" src="">
+            <div id="selection" aria-hidden="true">
+              <div class="handle ne"></div>
+              <div class="handle nw"></div>
+              <div class="handle se"></div>
+              <div class="handle sw"></div>
+            </div>
+            <div id="placeholder" style="text-align:center;color:var(--muted);padding:26px">Preview will appear here</div>
+          </div>
+
+          <div style="display:flex;gap:10px;margin-top:14px;justify-content:center;flex-wrap:wrap">
+            <button id="cropBtn" class="btn btn-primary"><i class="fa fa-crop"></i> Crop</button>
+            <button id="resetBtn" class="btn">Reset</button>
+            <button id="fitBtn" class="btn" title="Select full image">Select full image</button>
+          </div>
+
+          <div id="downloadWrap" style="display:none;margin-top:14px;text-align:center">
+            <a id="downloadLink" class="btn btn-secondary" download><i class="fa fa-download"></i> Download Cropped</a>
+            <div class="meta" id="outInfo"></div>
+          </div>
+
+        </div>
+
+        <aside class="card" style="height:fit-content">
+          <div style="display:flex;flex-direction:column;gap:8px">
+            <div><strong>Status:</strong> <span id="status" class="muted">No file</span></div>
+            <div><strong>Original:</strong> <span id="origMeta" class="muted">—</span></div>
+            <div><strong>Selection:</strong> <span id="selMeta" class="muted">—</span></div>
+          </div>
+        </aside>
+      </div>
+    </div>
+
+    <footer>
+      <p>&copy; 2025 iLoveIMG Clone — Crop Image Tool (Demo)</p>
+    </footer>
+  </div>
+
+  <script>
+    // Elements
+    const uploadBox = document.getElementById('uploadBox');
+    const fileInput = document.getElementById('fileInput');
+    const selectBtn = document.getElementById('selectBtn');
+    const sampleBtn = document.getElementById('sampleBtn');
+    const previewWrap = document.getElementById('previewWrap');
+    const previewImg = document.getElementById('previewImg');
+    const placeholder = document.getElementById('placeholder');
+    const selection = document.getElementById('selection');
+    const cropBtn = document.getElementById('cropBtn');
+    const resetBtn = document.getElementById('resetBtn');
+    const fitBtn = document.getElementById('fitBtn');
+    const downloadWrap = document.getElementById('downloadWrap');
+    const downloadLink = document.getElementById('downloadLink');
+    const outInfo = document.getElementById('outInfo');
+    const status = document.getElementById('status');
+    const origMeta = document.getElementById('origMeta');
+    const selMeta = document.getElementById('selMeta');
+
+    // State
+    let currentFile = null;
+    let imgNatural = {w:0,h:0};
+    let isPointerDown = false;
+    let mode = null; // 'draw' | 'move' | 'resize'
+    let pointerStart = {x:0,y:0};
+    let sel = {x:0,y:0,w:0,h:0}; // selection in displayed-image pixels (relative to image top-left within previewWrap)
+    let lastMouse = {x:0,y:0};
+    let activeHandle = null;
+
+    // Helpers
+    function humanSize(bytes){
+      if(bytes === 0) return '0 B';
+      const k = 1024; const sizes = ['B','KB','MB','GB'];
+      const i = Math.floor(Math.log(bytes)/Math.log(k));
+      return parseFloat((bytes/Math.pow(k,i)).toFixed(2)) + ' ' + sizes[i];
+    }
+
+    function resetUI(){
+      currentFile = null;
+      previewImg.src = '';
+      previewImg.style.display = 'none';
+      placeholder.style.display = 'block';
+      selection.style.display = 'none';
+      downloadWrap.style.display = 'none';
+      status.textContent = 'No file';
+      origMeta.textContent = '—';
+      selMeta.textContent = '—';
+      sel = {x:0,y:0,w:0,h:0};
+    }
+
+    // Upload handling
+    selectBtn.addEventListener('click', ()=> fileInput.click());
+    fileInput.addEventListener('change', e => handleFiles(e.target.files));
+    sampleBtn.addEventListener('click', ()=> {
+      // use picsum sample
+      fetch('https://picsum.photos/1200/800').then(r=>r.blob()).then(blob=>{
+        const f = new File([blob],'sample.jpg',{type:blob.type});
+        handleFiles([f]);
+      }).catch(()=>alert('Failed to load sample'));
+    });
+
+    ['dragenter','dragover'].forEach(evt => uploadBox.addEventListener(evt, e => { e.preventDefault(); uploadBox.classList.add('highlight'); }));
+    ['dragleave','drop'].forEach(evt => uploadBox.addEventListener(evt, e => { e.preventDefault(); uploadBox.classList.remove('highlight'); }));
+    uploadBox.addEventListener('drop', e => handleFiles(e.dataTransfer.files));
+
+    function handleFiles(files){
+      if(!files || files.length === 0) return;
+      const file = files[0];
+      if(!file.type.startsWith('image/')) { alert('Please select an image'); return; }
+      currentFile = file;
+      status.textContent = 'Loaded';
+      origMeta.textContent = `${humanSize(file.size)} • ${file.type}`;
+      downloadWrap.style.display = 'none';
+      // load to image element
+      const reader = new FileReader();
+      reader.onload = e => {
+        previewImg.src = e.target.result;
+        previewImg.style.display = 'block';
+        placeholder.style.display = 'none';
+        // ensure image natural size is read
+        const tmp = new Image();
+        tmp.onload = () => {
+          imgNatural.w = tmp.width; imgNatural.h = tmp.height;
+          origMeta.textContent = `${humanSize(file.size)} • ${imgNatural.w}×${imgNatural.h} • ${file.type}`;
+        };
+        tmp.src = e.target.result;
+      };
+      reader.readAsDataURL(file);
+      // clear previous selection
+      sel = {x:0,y:0,w:0,h:0}; updateSelectionUI();
+    }
+
+    // Compute displayed image rectangle inside previewWrap (where object-fit:contain centers it)
+    function getDisplayedImageRect(){
+      const wrapRect = previewWrap.getBoundingClientRect();
+      if(!previewImg.naturalWidth) return null;
+      const containerW = wrapRect.width - 20; // account for padding in CSS (preview-wrap has 10px padding); coarse
+      const containerH = wrapRect.height - 20;
+      // Actually use computed client width/height of img element's displayed size
+      const imgRect = previewImg.getBoundingClientRect();
+      // Because previewImg has object-fit:contain, the actual displayed image (non-transparent) is centered inside previewWrap
+      // We'll compute its position relative to previewWrap's top-left
+      const left = imgRect.left - wrapRect.left;
+      const top = imgRect.top - wrapRect.top;
+      return {
+        left, top, width: imgRect.width, height: imgRect.height, wrapRect
+      };
+    }
+
+    // Convert a point on pointer event to coordinates relative to the displayed image (clamped)
+    function pointToImageCoords(clientX, clientY){
+      const d = getDisplayedImageRect();
+      if(!d) return null;
+      const x = clientX - (d.wrapRect.left + d.left);
+      const y = clientY - (d.wrapRect.top + d.top);
+      // clamp
+      const cx = Math.max(0, Math.min(d.width, x));
+      const cy = Math.max(0, Math.min(d.height, y));
+      return {x: cx, y: cy, d};
+    }
+
+    // Update selection UI rectangle (in px relative to previewWrap)
+    function updateSelectionUI(){
+      if(sel.w <= 0 || sel.h <= 0){ selection.style.display = 'none'; selMeta.textContent = '—'; return; }
+      selection.style.display = 'block';
+      selection.style.left = (sel.x + getDisplayedImageRect().left) + 'px';
+      selection.style.top = (sel.y + getDisplayedImageRect().top) + 'px';
+      selection.style.width = sel.w + 'px';
+      selection.style.height = sel.h + 'px';
+      selMeta.textContent = `${Math.round(sel.w)}×${Math.round(sel.h)} (displayed)`;
+    }
+
+    // Pointer handling (works for mouse and touch)
+    previewWrap.addEventListener('pointerdown', (e) => {
+      if(!currentFile) return;
+      previewWrap.setPointerCapture(e.pointerId);
+      isPointerDown = true;
+      const p = pointToImageCoords(e.clientX, e.clientY);
+      if(!p) return;
+      pointerStart = {x: p.x, y: p.y};
+      lastMouse = {x: p.x, y: p.y};
+      // detect if pointer is inside existing selection (for moving) or on handle (for resizing)
+      const rect = sel;
+      const inside = rect.w > 0 && rect.h > 0 && p.x >= rect.x && p.x <= rect.x + rect.w && p.y >= rect.y && p.y <= rect.y + rect.h;
+      // handle detection (within 12px of corners)
+      const cornerSize = 12;
+      activeHandle = null;
+      if(inside){
+        // check corners: nw, ne, sw, se
+        const near = (cx,cy) => Math.hypot(p.x - cx, p.y - cy) <= cornerSize;
+        if(near(rect.x, rect.y)) activeHandle = 'nw';
+        else if(near(rect.x + rect.w, rect.y)) activeHandle = 'ne';
+        else if(near(rect.x, rect.y + rect.h)) activeHandle = 'sw';
+        else if(near(rect.x + rect.w, rect.y + rect.h)) activeHandle = 'se';
+      }
+      if(activeHandle) {
+        mode = 'resize';
+      } else if (inside) {
+        mode = 'move';
+      } else {
+        mode = 'draw';
+        // start a new selection
+        sel = {x: pointerStart.x, y: pointerStart.y, w: 0, h: 0};
+        updateSelectionUI();
+      }
+    });
+
+    previewWrap.addEventListener('pointermove', (e) => {
+      if(!isPointerDown) return;
+      const p = pointToImageCoords(e.clientX, e.clientY);
+      if(!p) return;
+      const dx = p.x - pointerStart.x;
+      const dy = p.y - pointerStart.y;
+      if(mode === 'draw'){
+        // draw new selection from pointerStart to current
+        const x = Math.min(pointerStart.x, p.x);
+        const y = Math.min(pointerStart.y, p.y);
+        const w = Math.abs(p.x - pointerStart.x);
+        const h = Math.abs(p.y - pointerStart.y);
+        sel = {x, y, w, h};
+        updateSelectionUI();
+      } else if (mode === 'move'){
+        // move selection by delta from lastMouse
+        const mx = p.x - lastMouse.x;
+        const my = p.y - lastMouse.y;
+        sel.x += mx; sel.y += my;
+        // clamp inside displayed image
+        const d = getDisplayedImageRect();
+        sel.x = Math.max(0, Math.min(d.width - sel.w, sel.x));
+        sel.y = Math.max(0, Math.min(d.height - sel.h, sel.y));
+        updateSelectionUI();
+        lastMouse = {x: p.x, y: p.y};
+      } else if (mode === 'resize' && activeHandle){
+        // resize from corner
+        const d = getDisplayedImageRect();
+        // compute new rect based on which handle
+        let nx = sel.x, ny = sel.y, nw = sel.w, nh = sel.h;
+        if(activeHandle === 'nw'){
+          nx = Math.min(p.x, sel.x + sel.w - 1);
+          ny = Math.min(p.y, sel.y + sel.h - 1);
+          nw = (sel.x + sel.w) - nx;
+          nh = (sel.y + sel.h) - ny;
+        } else if(activeHandle === 'ne'){
+          ny = Math.min(p.y, sel.y + sel.h - 1);
+          nw = Math.max(1, p.x - sel.x);
+          nh = (sel.y + sel.h) - ny;
+        } else if(activeHandle === 'sw'){
+          nx = Math.min(p.x, sel.x + sel.w - 1);
+          nw = (sel.x + sel.w) - nx;
+          nh = Math.max(1, p.y - sel.y);
+        } else if(activeHandle === 'se'){
+          nw = Math.max(1, p.x - sel.x);
+          nh = Math.max(1, p.y - sel.y);
+        }
+        // clamp to image
+        nx = Math.max(0, Math.min(d.width - 1, nx));
+        ny = Math.max(0, Math.min(d.height - 1, ny));
+        nw = Math.max(1, Math.min(d.width - nx, nw));
+        nh = Math.max(1, Math.min(d.height - ny, nh));
+        sel = {x: nx, y: ny, w: nw, h: nh};
+        updateSelectionUI();
+      }
+    });
+
+    // end pointer
+    previewWrap.addEventListener('pointerup', (e) => {
+      if(!isPointerDown) return;
+      try { previewWrap.releasePointerCapture(e.pointerId); } catch(e) {}
+      isPointerDown = false;
+      mode = null;
+      activeHandle = null;
+    });
+
+    // handle leaving pointer (safety)
+    previewWrap.addEventListener('pointercancel', ()=>{ isPointerDown=false; mode=null; activeHandle=null; });
+
+    // Select full image
+    fitBtn.addEventListener('click', ()=>{
+      if(!currentFile || !previewImg.naturalWidth) return;
+      const d = getDisplayedImageRect();
+      if(!d) return;
+      sel = {x:0, y:0, w: d.width, h: d.height};
+      updateSelectionUI();
+    });
+
+    // Crop button
+    cropBtn.addEventListener('click', async ()=>{
+      if(!currentFile) { alert('No image loaded'); return; }
+      if(sel.w <= 0 || sel.h <= 0) { alert('Draw a selection first'); return; }
+      // map selection from displayed-image pixels to original image pixels
+      const d = getDisplayedImageRect();
+      if(!d) { alert('Image not ready'); return; }
+      const scaleX = previewImg.naturalWidth / d.width;
+      const scaleY = previewImg.naturalHeight / d.height;
+      const sx = Math.round(sel.x * scaleX);
+      const sy = Math.round(sel.y * scaleY);
+      const sw = Math.round(sel.w * scaleX);
+      const sh = Math.round(sel.h * scaleY);
+      // safety clamp
+      const sx2 = Math.max(0, Math.min(previewImg.naturalWidth-1, sx));
+      const sy2 = Math.max(0, Math.min(previewImg.naturalHeight-1, sy));
+      const sw2 = Math.max(1, Math.min(previewImg.naturalWidth - sx2, sw));
+      const sh2 = Math.max(1, Math.min(previewImg.naturalHeight - sy2, sh));
+      // draw on canvas
+      const canvas = document.createElement('canvas');
+      canvas.width = sw2; canvas.height = sh2;
+      const ctx = canvas.getContext('2d');
+
+      // load a fresh Image object to avoid any taint issues (we used dataURL so it's safe)
+      const tmp = await loadImage(previewImg.src);
+      ctx.drawImage(tmp, sx2, sy2, sw2, sh2, 0, 0, sw2, sh2);
+
+      const blob = await new Promise(res => canvas.toBlob(res, 'image/jpeg', 0.92));
+      const url = URL.createObjectURL(blob);
+      downloadLink.href = url;
+      downloadLink.download = 'cropped.jpg';
+      outInfo.textContent = `${sw2} × ${sh2} • ${humanSize(blob.size)}`;
+      downloadWrap.style.display = 'block';
+      // show result in preview
+      previewImg.src = url;
+      // clear selection (optional)
+      selection.style.display = 'none';
+      selMeta.textContent = `${sw2}×${sh2} (result)`;
+    });
+
+    resetBtn.addEventListener('click', resetUI);
+
+    // Utility: loadImage returning Promise
+    function loadImage(src){
+      return new Promise((resolve, reject) => {
+        const img = new Image();
+        img.onload = () => resolve(img);
+        img.onerror = reject;
+        img.src = src;
+      });
+    }
+
+    // When window resizes, selection position must be re-rendered
+    window.addEventListener('resize', () => { if(selection.style.display !== 'none') updateSelectionUI(); });
+
+    // Initialize
+    resetUI();
+  </script>
+</body>
+</html>

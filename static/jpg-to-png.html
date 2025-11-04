@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>JPG to PNG Converter — Free Online Tool</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+    :root{--bg:#f8fafc;--card:#fff;--accent:#3498db;--muted:#6b7280}
+    *{box-sizing:border-box}
+    body{font-family:Inter,system-ui,-apple-system,'Segoe UI',Roboto,Helvetica,Arial; background:var(--bg); margin:0; color:#0f172a}
+    .wrap{max-width:980px;margin:36px auto;padding:20px}
+    .header{display:flex;justify-content:space-between;align-items:center;margin-bottom:18px}
+    .logo{display:flex;gap:12px;align-items:center}
+    h1{font-size:20px;margin:0}
+    p.lead{color:var(--muted);margin:6px 0 0}
+    .card{background:var(--card);border-radius:12px;padding:20px;box-shadow:0 6px 20px rgba(2,6,23,0.06)}
+    .upload-box{border:2px dashed rgba(15,23,42,0.08);border-radius:10px;padding:28px;display:flex;gap:20px;align-items:center;justify-content:center;flex-direction:column;cursor:pointer}
+    .upload-box.highlight{background:linear-gradient(90deg,rgba(52,152,219,0.06),rgba(231,76,60,0.03));border-color:var(--accent)}
+    .btn{display:inline-flex;align-items:center;gap:8px;padding:10px 14px;border-radius:8px;border:none;cursor:pointer;font-weight:600}
+    .btn-primary{background:var(--accent);color:#fff}
+    .btn-secondary{background:#111827;color:#fff}
+    .grid{display:grid;grid-template-columns:1fr 360px;gap:18px;margin-top:18px}
+    footer{text-align:center;margin-top:20px;color:var(--muted);font-size:13px}
+    img{max-width:100%;border-radius:10px}
+    .progress{height:8px;background:#eef2f7;border-radius:8px;overflow:hidden}
+    .progress > i{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--accent),#f39c12)}
+    @media (max-width:900px){.grid{grid-template-columns:1fr}}
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="header">
+      <div class="logo">
+        <i class="fa fa-image" style="font-size:28px;color:var(--accent)"></i>
+        <div>
+          <h1>JPG to PNG Converter</h1>
+          <p class="lead">Convert your JPG images to high-quality PNG format instantly.</p>
+        </div>
+      </div>
+      <a class="btn btn-secondary" href="index.html"><i class="fa fa-arrow-left"></i> Back</a>
+    </div>
+
+    <div class="card">
+      <div class="upload-box" id="uploadBox">
+        <div style="text-align:center">
+          <i class="fa fa-file-image" style="font-size:36px;color:var(--accent)"></i>
+          <h3>Drag & drop or select a JPG image</h3>
+          <p class="muted">Supported: JPG, JPEG — Max 25MB</p>
+        </div>
+        <button id="selectBtn" class="btn btn-primary"><i class="fa fa-folder-open"></i> Select JPG</button>
+        <input id="fileInput" type="file" accept="image/jpeg" style="display:none">
+      </div>
+
+      <div class="grid" style="margin-top:18px">
+        <div>
+          <div class="card">
+            <h3>Original Image</h3>
+            <img id="inputPreview" src="" style="display:none" />
+            <div id="inputPlaceholder" style="color:#6b7280;text-align:center;">No image selected yet</div>
+          </div>
+        </div>
+
+        <aside class="card">
+          <h3>Converted Image (PNG)</h3>
+          <div class="progress"><i id="bar"></i></div>
+          <img id="outputPreview" src="" style="display:none;margin-top:10px;" />
+          <div id="outputPlaceholder" style="color:#6b7280;text-align:center;">No conversion yet</div>
+          <button id="convertBtn" class="btn btn-primary" style="margin-top:12px;width:100%;"><i class="fa fa-sync"></i> Convert to PNG</button>
+          <button id="downloadBtn" class="btn btn-secondary" style="margin-top:8px;width:100%;display:none;"><i class="fa fa-download"></i> Download PNG</button>
+        </aside>
+      </div>
+    </div>
+
+    <footer>&copy; 2025 iLoveIMG Clone — JPG to PNG Converter</footer>
+  </div>
+
+  <script>
+    const fileInput=document.getElementById('fileInput');
+    const selectBtn=document.getElementById('selectBtn');
+    const inputPreview=document.getElementById('inputPreview');
+    const inputPlaceholder=document.getElementById('inputPlaceholder');
+    const outputPreview=document.getElementById('outputPreview');
+    const outputPlaceholder=document.getElementById('outputPlaceholder');
+    const convertBtn=document.getElementById('convertBtn');
+    const downloadBtn=document.getElementById('downloadBtn');
+    const bar=document.getElementById('bar');
+    let currentFile=null, pngData=null;
+
+    selectBtn.onclick=()=>fileInput.click();
+    fileInput.onchange=e=>{
+      const file=e.target.files[0];
+      if(!file||!file.type.includes('jpeg'))return alert('Please select a JPG image.');
+      currentFile=file;
+      const r=new FileReader();
+      r.onload=ev=>{
+        inputPreview.src=ev.target.result;
+        inputPreview.style.display='block';
+        inputPlaceholder.style.display='none';
+      };
+      r.readAsDataURL(file);
+    };
+
+    convertBtn.onclick=()=>{
+      if(!currentFile)return alert('Select a JPG first!');
+      bar.style.width='20%';
+      const img=new Image();
+      img.onload=()=>{
+        bar.style.width='60%';
+        const canvas=document.createElement('canvas');
+        canvas.width=img.width;
+        canvas.height=img.height;
+        const ctx=canvas.getContext('2d');
+        ctx.drawImage(img,0,0);
+        pngData=canvas.toDataURL('image/png');
+        outputPreview.src=pngData;
+        outputPreview.style.display='block';
+        outputPlaceholder.style.display='none';
+        downloadBtn.style.display='block';
+        bar.style.width='100%';
+      };
+      const reader=new FileReader();
+      reader.onload=e=>{img.src=e.target.result};
+      reader.readAsDataURL(currentFile);
+    };
+
+    downloadBtn.onclick=()=>{
+      if(!pngData)return alert('No PNG to download.');
+      const a=document.createElement('a');
+      a.href=pngData;
+      a.download='converted.png';
+      a.click();
+    };
+  </script>
+</body>
+</html>

@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Flip Image — iLoveIMG Clone</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+    :root{--bg:#f8fafc;--card:#fff;--accent:#3498db;--muted:#6b7280}
+    *{box-sizing:border-box}
+    body{font-family:Inter,system-ui,-apple-system,'Segoe UI',Roboto,Helvetica,Arial; background:var(--bg); margin:0; color:#0f172a}
+    .wrap{max-width:980px;margin:36px auto;padding:20px}
+    .header{display:flex;justify-content:space-between;align-items:center;margin-bottom:18px}
+    .logo{display:flex;gap:12px;align-items:center}
+    .logo img{height:36px}
+    h1{font-size:20px;margin:0}
+    p.lead{color:var(--muted);margin:6px 0 0}
+    .card{background:var(--card);border-radius:12px;padding:20px;box-shadow:0 6px 20px rgba(2,6,23,0.06)}
+    .upload-box{border:2px dashed rgba(15,23,42,0.08);border-radius:10px;padding:28px;display:flex;gap:20px;align-items:center;justify-content:center;flex-direction:column;cursor:pointer}
+    .upload-box.highlight{background:linear-gradient(90deg,rgba(52,152,219,0.06),rgba(231,76,60,0.03));border-color:var(--accent)}
+    .upload-actions{display:flex;gap:10px;align-items:center}
+    .btn{display:inline-flex;align-items:center;gap:8px;padding:10px 14px;border-radius:8px;border:none;cursor:pointer;font-weight:600}
+    .btn-primary{background:var(--accent);color:#fff}
+    .btn-secondary{background:#111827;color:#fff}
+    .muted{color:var(--muted)}
+    .grid{display:grid;grid-template-columns:1fr 360px;gap:18px;margin-top:18px}
+    .preview-wrap{position:relative;display:flex;justify-content:center;align-items:center;background:#f3f4f6;border-radius:8px;padding:10px;overflow:hidden;min-height:260px}
+    .preview-img{max-width:100%;max-height:600px;border-radius:6px;object-fit:contain;display:block}
+    footer{margin-top:20px;text-align:center;color:var(--muted);font-size:13px}
+    @media(max-width:900px){.grid{grid-template-columns:1fr}}
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="header">
+      <div class="logo">
+        <img src="iloveimg-logo.svg" alt="logo">
+        <div>
+          <h1>Flip Image</h1>
+          <p class="lead">Flip images horizontally or vertically</p>
+        </div>
+      </div>
+      <div class="actions">
+        <a class="btn btn-secondary" href="index.html"><i class="fa fa-arrow-left"></i> Back</a>
+      </div>
+    </div>
+
+```
+<div class="card">
+  <div class="upload-box" id="uploadBox">
+    <div style="text-align:center">
+      <i class="fa fa-cloud-upload" style="font-size:36px;color:var(--accent)"></i>
+      <h3 style="margin:8px 0 6px">Drag & drop or select an image</h3>
+      <p class="small muted">JPG, PNG, WebP — max 25MB (demo)</p>
+    </div>
+    <div class="upload-actions">
+      <button id="selectBtn" class="btn btn-primary"><i class="fa fa-folder-open"></i> Select Image</button>
+      <input id="fileInput" type="file" accept="image/*" style="display:none">
+      <button id="sampleBtn" class="btn" title="Use sample image">Sample</button>
+    </div>
+  </div>
+
+  <div class="grid" style="margin-top:18px">
+    <div class="card">
+      <div class="preview-wrap">
+        <img id="previewImg" class="preview-img" alt="preview" src="">
+        <div id="placeholder" style="text-align:center;color:var(--muted);padding:26px">Preview will appear here</div>
+      </div>
+
+      <div style="display:flex;gap:10px;margin-top:14px;justify-content:center;flex-wrap:wrap">
+        <button id="flipHBtn" class="btn btn-primary"><i class="fa fa-arrows-left-right"></i> Flip Horizontal</button>
+        <button id="flipVBtn" class="btn btn-primary"><i class="fa fa-arrows-up-down"></i> Flip Vertical</button>
+        <button id="resetBtn" class="btn">Reset</button>
+      </div>
+
+      <div id="downloadWrap" style="display:none;margin-top:14px;text-align:center">
+        <a id="downloadLink" class="btn btn-secondary" download><i class="fa fa-download"></i> Download Flipped</a>
+        <div class="meta" id="outInfo"></div>
+      </div>
+    </div>
+
+    <aside class="card" style="height:fit-content">
+      <div style="display:flex;flex-direction:column;gap:8px">
+        <div><strong>Status:</strong> <span id="status" class="muted">No file</span></div>
+        <div><strong>Original:</strong> <span id="origMeta" class="muted">—</span></div>
+      </div>
+    </aside>
+  </div>
+</div>
+
+<footer>
+  <p>&copy; 2025 iLoveIMG Clone — Flip Image Tool (Demo)</p>
+</footer>
+```
+
+  </div>
+
+  <script>
+    const uploadBox = document.getElementById('uploadBox');
+    const fileInput = document.getElementById('fileInput');
+    const selectBtn = document.getElementById('selectBtn');
+    const sampleBtn = document.getElementById('sampleBtn');
+    const previewImg = document.getElementById('previewImg');
+    const placeholder = document.getElementById('placeholder');
+    const flipHBtn = document.getElementById('flipHBtn');
+    const flipVBtn = document.getElementById('flipVBtn');
+    const resetBtn = document.getElementById('resetBtn');
+    const downloadWrap = document.getElementById('downloadWrap');
+    const downloadLink = document.getElementById('downloadLink');
+    const outInfo = document.getElementById('outInfo');
+    const status = document.getElementById('status');
+    const origMeta = document.getElementById('origMeta');
+
+    let currentFile = null;
+    let originalURL = null;
+
+    function humanSize(bytes){
+      if(bytes === 0) return '0 B';
+      const k = 1024; const sizes = ['B','KB','MB','GB'];
+      const i = Math.floor(Math.log(bytes)/Math.log(k));
+      return parseFloat((bytes/Math.pow(k,i)).toFixed(2)) + ' ' + sizes[i];
+    }
+
+    function resetUI(){
+      currentFile = null;
+      previewImg.src = '';
+      previewImg.style.display = 'none';
+      placeholder.style.display = 'block';
+      downloadWrap.style.display = 'none';
+      status.textContent = 'No file';
+      origMeta.textContent = '—';
+    }
+
+    selectBtn.addEventListener('click', ()=> fileInput.click());
+    fileInput.addEventListener('change', e => handleFiles(e.target.files));
+    sampleBtn.addEventListener('click', ()=> {
+      fetch('https://picsum.photos/1200/800').then(r=>r.blob()).then(blob=>{
+        const f = new File([blob],'sample.jpg',{type:blob.type});
+        handleFiles([f]);
+      }).catch(()=>alert('Failed to load sample'));
+    });
+
+    ['dragenter','dragover'].forEach(evt => uploadBox.addEventListener(evt, e => { e.preventDefault(); uploadBox.classList.add('highlight'); }));
+    ['dragleave','drop'].forEach(evt => uploadBox.addEventListener(evt, e => { e.preventDefault(); uploadBox.classList.remove('highlight'); }));
+    uploadBox.addEventListener('drop', e => handleFiles(e.dataTransfer.files));
+
+    function handleFiles(files){
+      if(!files || files.length === 0) return;
+      const file = files[0];
+      if(!file.type.startsWith('image/')) { alert('Please select an image'); return; }
+      currentFile = file;
+      status.textContent = 'Loaded';
+      origMeta.textContent = `${humanSize(file.size)} • ${file.type}`;
+      const reader = new FileReader();
+      reader.onload = e => {
+        previewImg.src = e.target.result;
+        previewImg.style.display = 'block';
+        placeholder.style.display = 'none';
+        originalURL = e.target.result;
+      };
+      reader.readAsDataURL(file);
+    }
+
+    function loadImage(src){
+      return new Promise((resolve, reject) => {
+        const img = new Image();
+        img.onload = () => resolve(img);
+        img.onerror = reject;
+        img.src = src;
+      });
+    }
+
+    flipHBtn.addEventListener('click', async ()=>{
+      if(!previewImg.src) return;
+      const img = await loadImage(previewImg.src);
+      const canvas = document.createElement('canvas');
+      canvas.width = img.width;
+      canvas.height = img.height;
+      const ctx = canvas.getContext('2d');
+      ctx.translate(canvas.width,0);
+      ctx.scale(-1,1);
+      ctx.drawImage(img,0,0);
+      const url = canvas.toDataURL('image/jpeg',0.92);
+      previewImg.src = url;
+      downloadLink.href = url;
+      downloadWrap.style.display = 'block';
+      outInfo.textContent = `${img.width}×${img.height} • flipped horizontal`;
+    });
+
+    flipVBtn.addEventListener('click', async ()=>{
+      if(!previewImg.src) return;
+      const img = await loadImage(previewImg.src);
+      const canvas = document.createElement('canvas');
+      canvas.width = img.width;
+      canvas.height = img.height;
+      const ctx = canvas.getContext('2d');
+      ctx.translate(0,canvas.height);
+      ctx.scale(1,-1);
+      ctx.drawImage(img,0,0);
+      const url = canvas.toDataURL('image/jpeg',0.92);
+      previewImg.src = url;
+      downloadLink.href = url;
+      downloadWrap.style.display = 'block';
+      outInfo.textContent = `${img.width}×${img.height} • flipped vertical`;
+    });
+
+    resetBtn.addEventListener('click', ()=>{
+      if(originalURL){
+        previewImg.src = originalURL;
+        previewImg.style.display = 'block';
+        placeholder.style.display = 'none';
+      } else resetUI();
+    });
+
+    resetUI();
+  </script>
+
+</body>
+</html>

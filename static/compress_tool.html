@@ -1,0 +1,433 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Compress & Resize — iLoveIMG Clone</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+    :root{--bg:#f8fafc;--card:#fff;--accent:#e74c3c;--muted:#6b7280}
+    *{box-sizing:border-box}
+    body{font-family:Inter,system-ui,-apple-system,'Segoe UI',Roboto,Helvetica,Arial; background:var(--bg); margin:0; color:#0f172a}
+    .wrap{max-width:980px;margin:36px auto;padding:20px}
+    .header{display:flex;justify-content:space-between;align-items:center;margin-bottom:18px}
+    .logo{display:flex;gap:12px;align-items:center}
+    .logo img{height:36px}
+    h1{font-size:20px;margin:0}
+    p.lead{color:var(--muted);margin:6px 0 0}
+
+    .card{background:var(--card);border-radius:12px;padding:20px;box-shadow:0 6px 20px rgba(2,6,23,0.06)}
+    .upload-box{border:2px dashed rgba(15,23,42,0.08);border-radius:10px;padding:28px;display:flex;gap:20px;align-items:center;justify-content:center;flex-direction:column;cursor:pointer}
+    .upload-box.highlight{background:linear-gradient(90deg,rgba(231,76,60,0.06),rgba(52,152,219,0.03));border-color:var(--accent)}
+    .upload-actions{display:flex;gap:10px;align-items:center}
+    .btn{display:inline-flex;align-items:center;gap:8px;padding:10px 14px;border-radius:8px;border:none;cursor:pointer;font-weight:600}
+    .btn-primary{background:var(--accent);color:#fff}
+    .btn-secondary{background:#111827;color:#fff}
+    .muted{color:var(--muted)}
+
+    .grid{display:grid;grid-template-columns:1fr 360px;gap:18px;margin-top:18px}
+    .panel{display:flex;flex-direction:column;gap:12px}
+
+    .preview{display:flex;flex-direction:column;gap:8px;align-items:center}
+    .preview img{max-width:100%;max-height:360px;border-radius:8px;object-fit:contain;background:#f3f4f6;padding:8px}
+    .info{display:flex;gap:12px;flex-wrap:wrap}
+    .chip{background:#f8fafc;padding:8px 10px;border-radius:8px;border:1px solid #eef2f7;color:#0f172a;font-weight:600}
+
+    label{font-size:14px;color:var(--muted);font-weight:700}
+    input[type=range]{width:100%}
+    .form-row{display:flex;gap:10px;align-items:center}
+    .form-row .field{flex:1}
+    .small{font-size:13px;color:var(--muted)}
+
+    .output{display:flex;flex-direction:column;gap:10px}
+    .result-meta{display:flex;justify-content:space-between;align-items:center}
+    .progress{height:8px;background:#eef2f7;border-radius:8px;overflow:hidden}
+    .progress > i{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--accent),#f39c12)}
+
+    .download-btn{display:flex;justify-content:space-between;align-items:center;padding:12px 14px;border-radius:10px;background:#0f172a;color:#fff}
+
+    footer{margin-top:20px;text-align:center;color:var(--muted);font-size:13px}
+
+    @media (max-width:900px){.grid{grid-template-columns:1fr}.preview img{max-height:300px}}
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="header">
+      <div class="logo">
+        <img src="iloveimg-logo.svg" alt="logo">
+        <div>
+          <h1>Compress & Resize</h1>
+          <p class="lead">Compress and resize images quickly in the browser — no backend required for this demo.</p>
+        </div>
+      </div>
+      <div class="actions">
+        <a class="btn btn-secondary" href="Index.html"><i class="fa fa-arrow-left"></i> Back</a>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="upload-box" id="uploadBox">
+        <div style="text-align:center">
+          <i class="fa fa-cloud-upload" style="font-size:36px;color:var(--accent)"></i>
+          <h3 style="margin:8px 0 6px">Drag & drop or select an image</h3>
+          <p class="small muted">JPG, PNG, WebP — max 25MB (demo)</p>
+        </div>
+        <div class="upload-actions">
+          <button id="selectBtn" class="btn btn-primary"><i class="fa fa-folder-open"></i> Select Image</button>
+          <input id="fileInput" type="file" accept="image/*" style="display:none">
+          <button id="sampleBtn" class="btn" title="Use sample image">Sample</button>
+        </div>
+      </div>
+
+      <div class="grid" style="margin-top:18px">
+        <div class="panel">
+          <div class="card">
+            <div class="preview" id="previewArea">
+              <img id="previewImg" src="" alt="preview" style="display:none">
+              <div id="placeholder" style="padding:26px;text-align:center;color:var(--muted)">Preview will appear here</div>
+              <div class="info" id="metaInfo" style="display:none">
+                <div class="chip" id="origSize">Original: —</div>
+                <div class="chip" id="origDim">Dimensions: —</div>
+                <div class="chip" id="origType">Type: —</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="card">
+            <label for="mode">Mode</label>
+            <div class="form-row">
+              <select id="mode" class="field" style="padding:10px;border-radius:8px;border:1px solid #e6edf3">
+                <option value="compress">Compress (lossy)</option>
+                <option value="resize">Resize only</option>
+              </select>
+              <div style="min-width:120px;text-align:right"><span class="small muted">Choose action</span></div>
+            </div>
+
+            <label for="format" style="margin-top:12px">Output Format</label>
+            <div class="form-row">
+              <select id="format" class="field" style="padding:10px;border-radius:8px;border:1px solid #e6edf3">
+                <option value="auto">Auto (keep original)</option>
+                <option value="image/jpeg">JPEG (smaller)</option>
+                <option value="image/webp">WebP (best for web)</option>
+                <option value="image/png">PNG (lossless)</option>
+              </select>
+              <div style="min-width:120px;text-align:right"><span class="small muted">Format</span></div>
+            </div>
+
+            <div id="qualityBlock">
+              <label style="margin-top:12px">Quality <span id="qualityVal" style="font-weight:700">85%</span></label>
+              <input type="range" id="quality" min="10" max="100" value="85">
+              <p class="small">Quality affects JPEG/WebP. PNG ignores quality — convert to JPEG/WebP for smaller files.</p>
+            </div>
+
+            <label style="margin-top:8px">Resize (optional)</label>
+            <div class="form-row">
+              <input id="width" type="number" placeholder="Width px" class="field" style="padding:8px;border-radius:8px;border:1px solid #e6edf3">
+              <input id="height" type="number" placeholder="Height px" class="field" style="padding:8px;border-radius:8px;border:1px solid #e6edf3">
+            </div>
+            <div style="display:flex;gap:8px;align-items:center;margin-top:8px">
+              <input type="checkbox" id="keepRatio" checked>
+              <label for="keepRatio" class="small muted">Maintain aspect ratio</label>
+            </div>
+
+            <div style="display:flex;gap:10px;margin-top:14px">
+              <button id="compressBtn" class="btn btn-primary"><i class="fa fa-compress"></i> Execute</button>
+              <button id="resetBtn" class="btn">Reset</button>
+            </div>
+          </div>
+
+        </div>
+
+        <aside class="card panel">
+          <div class="output">
+            <div class="result-meta">
+              <strong>Result</strong>
+              <span class="small muted" id="status">No file</span>
+            </div>
+
+            <div class="progress" aria-hidden>
+              <i id="bar"></i>
+            </div>
+
+            <div style="display:flex;gap:8px;flex-direction:column">
+              <div style="display:flex;gap:8px;align-items:center;justify-content:space-between">
+                <div class="small muted">Original size</div>
+                <div id="origBytes" class="small">—</div>
+              </div>
+              <div style="display:flex;gap:8px;align-items:center;justify-content:space-between">
+                <div class="small muted">Output size</div>
+                <div id="compBytes" class="small">—</div>
+              </div>
+              <div style="display:flex;gap:8px;align-items:center;justify-content:space-between">
+                <div class="small muted">Savings</div>
+                <div id="savings" class="small">—</div>
+              </div>
+            </div>
+
+            <div style="margin-top:10px">
+              <div id="downloadWrap" style="display:none">
+                <div class="download-btn">
+                  <div>
+                    <div style="font-weight:700" id="outName">output.jpg</div>
+                    <div class="small muted" id="outInfo">JPEG • 800 × 600</div>
+                  </div>
+                  <div style="display:flex;gap:8px;align-items:center">
+                    <a id="downloadLink" class="btn btn-secondary" download><i class="fa fa-download"></i> Download</a>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div style="margin-top:10px;font-size:13px;color:var(--muted)">
+              <strong>Notes:</strong>
+              <ul style="margin:6px 0 0 18px;color:var(--muted)">
+                <li>Client-side processing — no files are uploaded to a server in this demo.</li>
+                <li>For PNG compression, consider converting to WebP or JPEG for smaller results.</li>
+                <li>Large images may hit browser memory limits.</li>
+              </ul>
+            </div>
+          </div>
+        </aside>
+      </div>
+    </div>
+
+    <footer>
+      <p>&copy; 2025 iLoveIMG Clone — Compress & Resize Tool (Demo)</p>
+    </footer>
+  </div>
+
+  <script>
+    // Elements
+    const uploadBox = document.getElementById('uploadBox');
+    const fileInput = document.getElementById('fileInput');
+    const selectBtn = document.getElementById('selectBtn');
+    const sampleBtn = document.getElementById('sampleBtn');
+    const previewImg = document.getElementById('previewImg');
+    const placeholder = document.getElementById('placeholder');
+    const metaInfo = document.getElementById('metaInfo');
+    const origSize = document.getElementById('origSize');
+    const origDim = document.getElementById('origDim');
+    const origType = document.getElementById('origType');
+    const origBytes = document.getElementById('origBytes');
+    const compBytes = document.getElementById('compBytes');
+    const savings = document.getElementById('savings');
+    const quality = document.getElementById('quality');
+    const qualityVal = document.getElementById('qualityVal');
+    const format = document.getElementById('format');
+    const widthInp = document.getElementById('width');
+    const heightInp = document.getElementById('height');
+    const keepRatio = document.getElementById('keepRatio');
+    const compressBtn = document.getElementById('compressBtn');
+    const resetBtn = document.getElementById('resetBtn');
+    const bar = document.getElementById('bar');
+    const status = document.getElementById('status');
+    const downloadWrap = document.getElementById('downloadWrap');
+    const downloadLink = document.getElementById('downloadLink');
+    const outName = document.getElementById('outName');
+    const outInfo = document.getElementById('outInfo');
+    const mode = document.getElementById('mode');
+    const qualityBlock = document.getElementById('qualityBlock');
+
+    let currentFile = null;
+    let imgNatural = {w:0,h:0};
+
+    // Helpers
+    function humanSize(bytes){
+      if(bytes === 0) return '0 B';
+      const k = 1024; const sizes = ['B','KB','MB','GB'];
+      const i = Math.floor(Math.log(bytes)/Math.log(k));
+      return parseFloat((bytes/Math.pow(k,i)).toFixed(2)) + ' ' + sizes[i];
+    }
+
+    function resetUI(){
+      previewImg.style.display='none'; placeholder.style.display='block'; metaInfo.style.display='none';
+      origBytes.textContent = '—'; compBytes.textContent = '—'; savings.textContent='—';
+      status.textContent = 'No file'; bar.style.width = '0%'; downloadWrap.style.display='none';
+      widthInp.value=''; heightInp.value='';
+    }
+
+    resetBtn.addEventListener('click', ()=>{ currentFile = null; resetUI(); });
+
+    // File selection
+    selectBtn.addEventListener('click', ()=> fileInput.click());
+    fileInput.addEventListener('change', (e)=> handleFiles(e.target.files));
+
+    sampleBtn.addEventListener('click', ()=>{
+      fetch('https://picsum.photos/1200/800').then(r=>r.blob()).then(blob=>{
+        const f = new File([blob],'sample.jpg',{type:blob.type});
+        handleFiles([f]);
+      });
+    });
+
+    // Drag & drop
+    ['dragenter','dragover'].forEach(evt=>{uploadBox.addEventListener(evt,(e)=>{e.preventDefault();uploadBox.classList.add('highlight');});});
+    ['dragleave','drop'].forEach(evt=>{uploadBox.addEventListener(evt,(e)=>{e.preventDefault();uploadBox.classList.remove('highlight');});});
+    uploadBox.addEventListener('drop', (e)=>{
+      const dt = e.dataTransfer; const files = dt.files; handleFiles(files);
+    });
+
+    function handleFiles(files){
+      if(!files || files.length===0) return;
+      const file = files[0];
+      if(!file.type.startsWith('image/')) { alert('Please select an image file'); return; }
+      currentFile = file;
+      status.textContent = 'Loaded';
+      origBytes.textContent = humanSize(file.size);
+
+      const reader = new FileReader();
+      reader.onload = (ev)=>{
+        previewImg.src = ev.target.result;
+        previewImg.style.display='block'; placeholder.style.display='none'; metaInfo.style.display='flex';
+      };
+      reader.readAsDataURL(file);
+
+      // get dimensions
+      const img = new Image();
+      img.onload = ()=>{
+        imgNatural.w = img.width; imgNatural.h = img.height;
+        origDim.textContent = `Dimensions: ${img.width} × ${img.height}`;
+        origSize.textContent = `Original: ${humanSize(file.size)}`;
+        origType.textContent = `Type: ${file.type || '—'}`;
+        widthInp.value = img.width; heightInp.value = img.height;
+      };
+      img.src = URL.createObjectURL(file);
+    }
+
+    // Keep ratio behavior
+    widthInp.addEventListener('input', ()=>{
+      if(keepRatio.checked && imgNatural.w) {
+        const w = parseInt(widthInp.value) || imgNatural.w;
+        const h = Math.round((w / imgNatural.w) * imgNatural.h);
+        heightInp.value = h;
+      }
+    });
+    heightInp.addEventListener('input', ()=>{
+      if(keepRatio.checked && imgNatural.h) {
+        const h = parseInt(heightInp.value) || imgNatural.h;
+        const w = Math.round((h / imgNatural.h) * imgNatural.w);
+        widthInp.value = w;
+      }
+    });
+
+    quality.addEventListener('input', ()=> qualityVal.textContent = quality.value + '%');
+
+    // Mode toggle: show/hide quality
+    mode.addEventListener('change', ()=>{
+      if(mode.value === 'resize'){
+        qualityBlock.style.display = 'none';
+      } else {
+        qualityBlock.style.display = 'block';
+      }
+    });
+
+    // Compression / Resize logic (client-side)
+    compressBtn.addEventListener('click', async ()=>{
+      if(!currentFile) { alert('No image selected'); return; }
+      status.textContent = mode.value === 'resize' ? 'Resizing...' : 'Processing...';
+      bar.style.width = '10%';
+
+      // Determine output mime
+      let outMime = format.value === 'auto' ? currentFile.type : format.value;
+      if(outMime === 'auto') outMime = currentFile.type || 'image/jpeg';
+
+      // Read image as Image object
+      const dataURL = await fileToDataURL(currentFile);
+      const img = await loadImage(dataURL);
+
+      // Resize if requested
+      let targetW = parseInt(widthInp.value) || img.width;
+      let targetH = parseInt(heightInp.value) || img.height;
+      if(!targetW) targetW = img.width; if(!targetH) targetH = img.height;
+
+      // Canvas
+      const canvas = document.createElement('canvas');
+      canvas.width = targetW; canvas.height = targetH;
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(img, 0, 0, targetW, targetH);
+
+      // If resize-only, keep original format unless user selected another
+      const isResizeOnly = mode.value === 'resize';
+      let finalMime = outMime;
+
+      const qualityVal = parseInt(quality.value) / 100;
+
+      // If resize-only and user kept auto, keep original mime
+      if(isResizeOnly && format.value === 'auto') finalMime = currentFile.type || 'image/jpeg';
+
+      // Generate blob
+      const blob = await new Promise(resolve => {
+        if(canvas.toBlob){
+          // If finalMime supports quality and we're not resize-only
+          if((finalMime === 'image/jpeg' || finalMime === 'image/webp') && !isResizeOnly){
+            canvas.toBlob(resolve, finalMime, qualityVal);
+          } else if((finalMime === 'image/jpeg' || finalMime === 'image/webp') && isResizeOnly){
+            // For resize-only, still allow quality when changing format
+            canvas.toBlob(resolve, finalMime, qualityVal);
+          } else {
+            canvas.toBlob(resolve, finalMime);
+          }
+        } else {
+          const data = canvas.toDataURL(finalMime);
+          const arr = data.split(',')[1];
+          const bstr = atob(arr);
+          let n = bstr.length; const u8 = new Uint8Array(n);
+          while(n--) u8[n]=bstr.charCodeAt(n);
+          resolve(new Blob([u8],{type:finalMime}));
+        }
+      });
+
+      bar.style.width = '70%';
+      await new Promise(r=>setTimeout(r,250));
+
+      // Update UI with results
+      const outSize = blob.size;
+      compBytes.textContent = humanSize(outSize);
+      const orig = currentFile.size || 0;
+      const saved = orig - outSize;
+      savings.textContent = saved > 0 ? humanSize(saved) + ` (${Math.round(100 * saved / orig)}%)` : '0 B (0%)';
+
+      // Create download link
+      const outType = blob.type || finalMime || 'image/jpeg';
+      const url = URL.createObjectURL(blob);
+      downloadLink.href = url;
+      const ext = outType.split('/')[1].split(';')[0];
+      downloadLink.download = `output.${ext}`;
+      outName.textContent = downloadLink.download;
+      outInfo.textContent = `${outType.split('/')[1].toUpperCase()} • ${targetW} × ${targetH}`;
+      downloadWrap.style.display = 'block';
+
+      // Update preview to output image
+      previewImg.src = url;
+      status.textContent = 'Done';
+      bar.style.width = '100%';
+
+      // Revoke URL after some time
+      setTimeout(()=> URL.revokeObjectURL(url), 60_000);
+    });
+
+    // Utilities
+    function fileToDataURL(file){
+      return new Promise((resolve,reject)=>{
+        const reader = new FileReader();
+        reader.onload = e=>resolve(e.target.result);
+        reader.onerror = reject;
+        reader.readAsDataURL(file);
+      });
+    }
+    function loadImage(src){
+      return new Promise((resolve,reject)=>{
+        const img = new Image();
+        img.onload = ()=>resolve(img);
+        img.onerror = reject;
+        img.src = src;
+      });
+    }
+
+    // Init
+    resetUI();
+    // ensure quality block visibility initial state
+    if(mode.value === 'resize') qualityBlock.style.display = 'none';
+  </script>
+</body>
+</html>

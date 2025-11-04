@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Resize Image — iLoveIMG Clone</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+    :root{--bg:#f8fafc;--card:#fff;--accent:#3498db;--muted:#6b7280}
+    *{box-sizing:border-box}
+    body{font-family:Inter,system-ui,-apple-system,'Segoe UI',Roboto,Helvetica,Arial; background:var(--bg); margin:0; color:#0f172a}
+    .wrap{max-width:980px;margin:36px auto;padding:20px}
+    .header{display:flex;justify-content:space-between;align-items:center;margin-bottom:18px}
+    .logo{display:flex;gap:12px;align-items:center}
+    .logo img{height:36px}
+    h1{font-size:20px;margin:0}
+    p.lead{color:var(--muted);margin:6px 0 0}
+
+    .card{background:var(--card);border-radius:12px;padding:20px;box-shadow:0 6px 20px rgba(2,6,23,0.06)}
+    .upload-box{border:2px dashed rgba(15,23,42,0.08);border-radius:10px;padding:28px;display:flex;gap:20px;align-items:center;justify-content:center;flex-direction:column;cursor:pointer}
+    .upload-box.highlight{background:linear-gradient(90deg,rgba(52,152,219,0.06),rgba(231,76,60,0.03));border-color:var(--accent)}
+    .upload-actions{display:flex;gap:10px;align-items:center}
+    .btn{display:inline-flex;align-items:center;gap:8px;padding:10px 14px;border-radius:8px;border:none;cursor:pointer;font-weight:600}
+    .btn-primary{background:var(--accent);color:#fff}
+    .btn-secondary{background:#111827;color:#fff}
+    .muted{color:var(--muted)}
+
+    .grid{display:grid;grid-template-columns:1fr 360px;gap:18px;margin-top:18px}
+    .panel{display:flex;flex-direction:column;gap:12px}
+
+    .preview{display:flex;flex-direction:column;gap:8px;align-items:center}
+    .preview img{max-width:100%;max-height:360px;border-radius:8px;object-fit:contain;background:#f3f4f6;padding:8px}
+    .info{display:flex;gap:12px;flex-wrap:wrap}
+    .chip{background:#f8fafc;padding:8px 10px;border-radius:8px;border:1px solid #eef2f7;color:#0f172a;font-weight:600}
+
+    label{font-size:14px;color:var(--muted);font-weight:700}
+    input[type=range]{width:100%}
+    .form-row{display:flex;gap:10px;align-items:center}
+    .form-row .field{flex:1}
+    .small{font-size:13px;color:var(--muted)}
+
+    .output{display:flex;flex-direction:column;gap:10px}
+    .result-meta{display:flex;justify-content:space-between;align-items:center}
+    .progress{height:8px;background:#eef2f7;border-radius:8px;overflow:hidden}
+    .progress > i{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--accent),#f39c12)}
+
+    .download-btn{display:flex;justify-content:space-between;align-items:center;padding:12px 14px;border-radius:10px;background:#0f172a;color:#fff}
+
+    footer{margin-top:20px;text-align:center;color:var(--muted);font-size:13px}
+
+    @media (max-width:900px){.grid{grid-template-columns:1fr}.preview img{max-height:300px}}
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="header">
+      <div class="logo">
+        <img src="iloveimg-logo.svg" alt="logo">
+        <div>
+          <h1>Resize Image</h1>
+          <p class="lead">Easily resize images while keeping the same design style as iLoveIMG.</p>
+        </div>
+      </div>
+      <div class="actions">
+        <a class="btn btn-secondary" href="Index.html"><i class="fa fa-arrow-left"></i> Back</a>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="upload-box" id="uploadBox">
+        <div style="text-align:center">
+          <i class="fa fa-cloud-upload" style="font-size:36px;color:var(--accent)"></i>
+          <h3 style="margin:8px 0 6px">Drag & drop or select an image</h3>
+          <p class="small muted">JPG, PNG, WebP — max 25MB (demo)</p>
+        </div>
+        <div class="upload-actions">
+          <button id="selectBtn" class="btn btn-primary"><i class="fa fa-folder-open"></i> Select Image</button>
+          <input id="fileInput" type="file" accept="image/*" style="display:none">
+          <button id="sampleBtn" class="btn" title="Use sample image">Sample</button>
+        </div>
+      </div>
+
+      <div class="grid" style="margin-top:18px">
+        <div class="panel">
+          <div class="card">
+            <div class="preview" id="previewArea">
+              <img id="previewImg" src="" alt="preview" style="display:none">
+              <div id="placeholder" style="padding:26px;text-align:center;color:var(--muted)">Preview will appear here</div>
+              <div class="info" id="metaInfo" style="display:none">
+                <div class="chip" id="origSize">Original: —</div>
+                <div class="chip" id="origDim">Dimensions: —</div>
+                <div class="chip" id="origType">Type: —</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="card">
+            <label style="margin-top:8px">Resize Options</label>
+            <div class="form-row">
+              <input id="width" type="number" placeholder="Width px" class="field" style="padding:8px;border-radius:8px;border:1px solid #e6edf3">
+              <input id="height" type="number" placeholder="Height px" class="field" style="padding:8px;border-radius:8px;border:1px solid #e6edf3">
+            </div>
+            <div style="display:flex;gap:8px;align-items:center;margin-top:8px">
+              <input type="checkbox" id="keepRatio" checked>
+              <label for="keepRatio" class="small muted">Maintain aspect ratio</label>
+            </div>
+
+            <div style="display:flex;gap:10px;margin-top:14px">
+              <button id="resizeBtn" class="btn btn-primary"><i class="fa fa-expand"></i> Resize</button>
+              <button id="resetBtn" class="btn">Reset</button>
+            </div>
+          </div>
+        </div>
+
+        <aside class="card panel">
+          <div class="output">
+            <div class="result-meta">
+              <strong>Result</strong>
+              <span class="small muted" id="status">No file</span>
+            </div>
+            <div class="progress" aria-hidden><i id="bar"></i></div>
+            <div style="display:flex;gap:8px;flex-direction:column">
+              <div style="display:flex;justify-content:space-between"><div class="small muted">Original size</div><div id="origBytes" class="small">—</div></div>
+              <div style="display:flex;justify-content:space-between"><div class="small muted">Resized size</div><div id="newBytes" class="small">—</div></div>
+            </div>
+
+            <div style="margin-top:10px">
+              <div id="downloadWrap" style="display:none">
+                <div class="download-btn">
+                  <div>
+                    <div style="font-weight:700" id="outName">resized.jpg</div>
+                    <div class="small muted" id="outInfo">JPEG • —</div>
+                  </div>
+                  <a id="downloadLink" class="btn btn-secondary" download><i class="fa fa-download"></i> Download</a>
+                </div>
+              </div>
+            </div>
+
+            <div style="margin-top:10px;font-size:13px;color:var(--muted)">
+              <strong>Notes:</strong>
+              <ul style="margin:6px 0 0 18px;color:var(--muted)">
+                <li>This demo performs resizing completely on your device (no uploads).</li>
+                <li>Aspect ratio can be maintained automatically.</li>
+              </ul>
+            </div>
+          </div>
+        </aside>
+      </div>
+    </div>
+
+    <footer>
+      <p>&copy; 2025 iLoveIMG Clone — Resize Image Tool (Demo)</p>
+    </footer>
+  </div>
+
+  <script>
+    const uploadBox = document.getElementById('uploadBox');
+    const fileInput = document.getElementById('fileInput');
+    const selectBtn = document.getElementById('selectBtn');
+    const sampleBtn = document.getElementById('sampleBtn');
+    const previewImg = document.getElementById('previewImg');
+    const placeholder = document.getElementById('placeholder');
+    const metaInfo = document.getElementById('metaInfo');
+    const origSize = document.getElementById('origSize');
+    const origDim = document.getElementById('origDim');
+    const origType = document.getElementById('origType');
+    const origBytes = document.getElementById('origBytes');
+    const newBytes = document.getElementById('newBytes');
+    const widthInp = document.getElementById('width');
+    const heightInp = document.getElementById('height');
+    const keepRatio = document.getElementById('keepRatio');
+    const resizeBtn = document.getElementById('resizeBtn');
+    const resetBtn = document.getElementById('resetBtn');
+    const bar = document.getElementById('bar');
+    const status = document.getElementById('status');
+    const downloadWrap = document.getElementById('downloadWrap');
+    const downloadLink = document.getElementById('downloadLink');
+    const outName = document.getElementById('outName');
+    const outInfo = document.getElementById('outInfo');
+
+    let currentFile = null;
+    let imgNatural = {w:0,h:0};
+
+    function humanSize(bytes){
+      if(bytes === 0) return '0 B';
+      const k = 1024; const sizes = ['B','KB','MB','GB'];
+      const i = Math.floor(Math.log(bytes)/Math.log(k));
+      return parseFloat((bytes/Math.pow(k,i)).toFixed(2)) + ' ' + sizes[i];
+    }
+
+    function resetUI(){
+      previewImg.style.display='none'; placeholder.style.display='block'; metaInfo.style.display='none';
+      status.textContent = 'No file'; bar.style.width = '0%'; downloadWrap.style.display='none';
+      origBytes.textContent='—'; newBytes.textContent='—';
+      widthInp.value=''; heightInp.value='';
+    }
+
+    resetBtn.addEventListener('click', ()=>{ currentFile = null; resetUI(); });
+
+    selectBtn.addEventListener('click', ()=> fileInput.click());
+    fileInput.addEventListener('change', e => handleFiles(e.target.files));
+
+    sampleBtn.addEventListener('click', ()=> {
+      fetch('https://picsum.photos/1200/800').then(r=>r.blob()).then(blob=>{
+        const f = new File([blob],'sample.jpg',{type:blob.type});
+        handleFiles([f]);
+      });
+    });
+
+    ['dragenter','dragover'].forEach(evt=>uploadBox.addEventListener(evt,e=>{e.preventDefault();uploadBox.classList.add('highlight');}));
+    ['dragleave','drop'].forEach(evt=>uploadBox.addEventListener(evt,e=>{e.preventDefault();uploadBox.classList.remove('highlight');}));
+    uploadBox.addEventListener('drop', e=> handleFiles(e.dataTransfer.files));
+
+    function handleFiles(files){
+      if(!files || files.length===0) return;
+      const file = files[0];
+      if(!file.type.startsWith('image/')) { alert('Please select an image'); return; }
+      currentFile = file;
+      status.textContent = 'Loaded';
+      origBytes.textContent = humanSize(file.size);
+
+      const reader = new FileReader();
+      reader.onload = ev => {
+        previewImg.src = ev.target.result;
+        previewImg.style.display='block';
+        placeholder.style.display='none';
+        metaInfo.style.display='flex';
+      };
+      reader.readAsDataURL(file);
+
+      const img = new Image();
+      img.onload = ()=>{
+        imgNatural.w = img.width; imgNatural.h = img.height;
+        origDim.textContent = `Dimensions: ${img.width} × ${img.height}`;
+        origSize.textContent = `Original: ${humanSize(file.size)}`;
+        origType.textContent = `Type: ${file.type}`;
+        widthInp.value = img.width; heightInp.value = img.height;
+      };
+      img.src = URL.createObjectURL(file);
+    }
+
+    widthInp.addEventListener('input', ()=>{
+      if(keepRatio.checked && imgNatural.w){
+        const w = parseInt(widthInp.value)||imgNatural.w;
+        const h = Math.round((w/imgNatural.w)*imgNatural.h);
+        heightInp.value = h;
+      }
+    });
+    heightInp.addEventListener('input', ()=>{
+      if(keepRatio.checked && imgNatural.h){
+        const h = parseInt(heightInp.value)||imgNatural.h;
+        const w = Math.round((h/imgNatural.h)*imgNatural.w);
+        widthInp.value = w;
+      }
+    });
+
+    resizeBtn.addEventListener('click', async ()=>{
+      if(!currentFile){ alert('No image selected'); return; }
+      status.textContent = 'Resizing...';
+      bar.style.width = '10%';
+
+      const dataURL = await fileToDataURL(currentFile);
+      const img = await loadImage(dataURL);
+
+      let w = parseInt(widthInp.value)||img.width;
+      let h = parseInt(heightInp.value)||img.height;
+
+      const canvas = document.createElement('canvas');
+      canvas.width = w; canvas.height = h;
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(img,0,0,w,h);
+
+      const blob = await new Promise(res=>canvas.toBlob(res,'image/jpeg',0.9));
+
+      bar.style.width = '70%';
+      const outSize = blob.size;
+      newBytes.textContent = humanSize(outSize);
+
+      const url = URL.createObjectURL(blob);
+      downloadLink.href = url;
+      downloadLink.download = 'resized.jpg';
+      outName.textContent = 'resized.jpg';
+      outInfo.textContent = `JPEG • ${w} × ${h}`;
+      downloadWrap.style.display = 'block';
+
+      previewImg.src = url;
+      status.textContent = 'Done';
+      bar.style.width = '100%';
+
+      setTimeout(()=>URL.revokeObjectURL(url),60_000);
+    });
+
+    function fileToDataURL(file){
+      return new Promise((resolve,reject)=>{
+        const r = new FileReader();
+        r.onload = e=>resolve(e.target.result);
+        r.onerror = reject;
+        r.readAsDataURL(file);
+      });
+    }
+    function loadImage(src){
+      return new Promise((resolve,reject)=>{
+        const img = new Image();
+        img.onload = ()=>resolve(img);
+        img.onerror = reject;
+        img.src = src;
+      });
+    }
+
+    resetUI();
+  </script>
+</body>
+</html>

@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PNG to JPG — iLoveIMG Style</title>
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+<style>
+:root{
+  --bg:#f8fafc; --card:#fff; --accent:#3498db; --muted:#6b7280; --border:#e5e7eb;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{
+  font-family:Inter,system-ui,-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;
+  background:var(--bg); color:#0f172a; line-height:1.5;
+}
+.wrap{max-width:900px;margin:36px auto;padding:18px}
+.header{display:flex;justify-content:space-between;align-items:center;margin-bottom:18px}
+.logo{display:flex;gap:12px;align-items:center}
+h1{font-size:20px;margin:0}
+p.lead{color:var(--muted);margin-top:6px}
+.card{background:var(--card);border-radius:12px;padding:18px;box-shadow:0 6px 20px rgba(2,6,23,0.06)}
+.upload-box{
+  border:2px dashed rgba(15,23,42,0.08);border-radius:10px;padding:24px;
+  display:flex;flex-direction:column;align-items:center;gap:12px;cursor:pointer;transition:all .2s
+}
+.upload-box:hover{background:linear-gradient(90deg, rgba(52,152,219,0.04), rgba(0,0,0,0.01))}
+.btn{display:inline-flex;align-items:center;gap:8px;padding:10px 14px;border-radius:8px;border:none;cursor:pointer;font-weight:600}
+.btn-primary{background:var(--accent);color:#fff}
+.btn-secondary{background:#111827;color:#fff}
+.preview-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:12px;margin-top:12px}
+.preview-item{background:#fafafa;padding:10px;border-radius:10px; text-align:center; box-shadow:0 2px 8px rgba(0,0,0,0.04); word-wrap: break-word;}
+.preview-item img{width:100%;height:90px;object-fit:cover;border-radius:8px}
+.preview-item div{overflow-wrap: break-word; word-break: break-word; font-size:12px; margin-top:6px;}
+.status{font-size:13px;color:var(--muted);margin-top:8px;text-align:center;}
+.progress{height:8px;background:#eef2f7;border-radius:8px;overflow:hidden;margin:10px 0}
+.progress > i{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--accent),#f39c12);transition:width .25s}
+button:disabled{opacity:0.6; cursor:not-allowed;}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="header">
+    <div class="logo">
+      <i class="fa fa-image" style="font-size:28px;color:var(--accent)"></i>
+      <div>
+        <h1>PNG to JPG</h1>
+        <p class="lead">Convert PNG images to JPG instantly (client-side)</p>
+      </div>
+    </div>
+    <a class="btn btn-secondary" href="index.html"><i class="fa fa-arrow-left"></i> Back</a>
+  </div>
+
+  <div class="card">
+    <div class="upload-box" id="uploadBox">
+      <i class="fa fa-cloud-arrow-up" style="font-size:34px;color:var(--accent)"></i>
+      <h3>Drag & drop or select PNG images</h3>
+      <p class="muted">Max 25MB per file</p>
+      <button id="selectBtn" class="btn btn-primary"><i class="fa fa-folder-open"></i> Select Files</button>
+      <input id="fileInput" type="file" accept=".png,image/png" multiple style="display:none">
+    </div>
+
+    <div class="progress"><i id="bar"></i></div>
+    <div id="preview" class="preview-grid"></div>
+
+    <div style="margin-top:16px; display:flex; gap:12px; justify-content:center; flex-wrap:wrap;">
+      <button id="convertBtn" class="btn btn-primary" style="flex:1; min-width:140px;"><i class="fa fa-sync"></i> Convert All to JPG</button>
+      <button id="clearBtn" class="btn btn-secondary" style="flex:1; min-width:140px;"><i class="fa fa-trash"></i> Clear</button>
+    </div>
+
+    <div class="status" id="status"></div>
+  </div>
+</div>
+
+<script>
+const fileInput=document.getElementById('fileInput');
+const selectBtn=document.getElementById('selectBtn');
+const uploadBox=document.getElementById('uploadBox');
+const preview=document.getElementById('preview');
+const convertBtn=document.getElementById('convertBtn');
+const clearBtn=document.getElementById('clearBtn');
+const status=document.getElementById('status');
+const bar=document.getElementById('bar');
+
+let files=[];
+
+selectBtn.onclick=()=>fileInput.click();
+uploadBox.addEventListener('dragover',e=>{e.preventDefault();});
+uploadBox.addEventListener('drop',e=>{e.preventDefault(); handleFiles(e.dataTransfer.files);});
+fileInput.onchange=e=>handleFiles(e.target.files);
+
+function handleFiles(selectedFiles){
+  files=Array.from(selectedFiles).filter(f=>f.size<=25*1024*1024 && f.type==='image/png');
+  preview.innerHTML=''; status.textContent=''; bar.style.width='0%';
+  files.forEach(f=>{
+    const div=document.createElement('div'); div.className='preview-item';
+    const img=document.createElement('img'); img.src=URL.createObjectURL(f); img.alt=f.name;
+    const name=document.createElement('div'); name.textContent=f.name;
+    div.appendChild(img); div.appendChild(name); preview.appendChild(div);
+  });
+  if(!files.length) status.textContent='No valid PNG files selected (max 25MB each).';
+}
+
+convertBtn.onclick=async ()=>{
+  if(!files.length) return alert('Select PNG files first!');
+  convertBtn.disabled=true; clearBtn.disabled=true; status.textContent='Converting...';
+  bar.style.width='5%';
+
+  preview.innerHTML=''; // show converted previews
+  for(let i=0;i<files.length;i++){
+    const f=files[i];
+    const dataURL=await fileToDataURL(f);
+    const img=await loadImage(dataURL);
+
+    // canvas convert to JPG
+    const canvas=document.createElement('canvas');
+    canvas.width=img.width;
+    canvas.height=img.height;
+    const ctx=canvas.getContext('2d');
+    ctx.fillStyle='#ffffff';
+    ctx.fillRect(0,0,canvas.width,canvas.height);
+    ctx.drawImage(img,0,0);
+    const jpgBlob=await new Promise(res=>canvas.toBlob(res,'image/jpeg',0.95));
+
+    const outURL=URL.createObjectURL(jpgBlob);
+    const div=document.createElement('div'); div.className='preview-item';
+    const imgEl=document.createElement('img'); imgEl.src=outURL; imgEl.alt=f.name;
+    const name=document.createElement('div'); name.textContent=f.name.replace(/\.png$/i,'.jpg');
+
+    const btn=document.createElement('button'); btn.className='btn btn-primary'; btn.style.marginTop='6px'; btn.style.fontSize='12px';
+    btn.innerHTML='<i class="fa fa-download"></i> Download';
+    btn.onclick=()=>downloadBlob(jpgBlob,f.name.replace(/\.png$/i,'.jpg'));
+
+    div.appendChild(imgEl); div.appendChild(name); div.appendChild(btn);
+    preview.appendChild(div);
+
+    bar.style.width=`${Math.round(((i+1)/files.length)*100)}%`;
+  }
+
+  status.textContent=`Conversion finished — ${files.length} file(s) processed.`;
+  convertBtn.disabled=false; clearBtn.disabled=false;
+  setTimeout(()=>bar.style.width='0%',1000);
+};
+
+clearBtn.onclick=()=>{
+  files=[]; preview.innerHTML=''; status.textContent=''; fileInput.value=''; bar.style.width='0%';
+};
+
+function fileToDataURL(blob){return new Promise((res,rej)=>{const r=new FileReader(); r.onload=()=>res(r.result); r.onerror=rej; r.readAsDataURL(blob);});}
+function loadImage(src){return new Promise((res,rej)=>{const img=new Image(); img.onload=()=>res(img); img.onerror=rej; img.src=src;});}
+function downloadBlob(blob,filename){const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=filename; document.body.appendChild(a); a.click(); document.body.removeChild(a);}
+</script>
+</body>
+</html>

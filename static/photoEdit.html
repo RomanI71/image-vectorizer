@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Photo Edit — Background Blur + Rotate/Flip</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<style>
+:root{--bg:#f8fafc;--card:#fff;--accent:#3498db;--muted:#6b7280}
+*{box-sizing:border-box}
+body{font-family:Inter,system-ui,-apple-system,'Segoe UI',Roboto,Helvetica,Arial;background:var(--bg);margin:0;color:#0f172a}
+.wrap{max-width:980px;margin:36px auto;padding:20px}
+.header{display:flex;justify-content:space-between;align-items:center;margin-bottom:18px}
+.logo{display:flex;gap:12px;align-items:center}
+.logo img{height:36px}
+h1{font-size:20px;margin:0}
+p.lead{color:var(--muted);margin:6px 0 0}
+.card{background:var(--card);border-radius:12px;padding:20px;box-shadow:0 6px 20px rgba(2,6,23,0.06)}
+.upload-box{border:2px dashed rgba(15,23,42,0.08);border-radius:10px;padding:28px;display:flex;gap:20px;align-items:center;justify-content:center;flex-direction:column;cursor:pointer}
+.upload-box.highlight{background:linear-gradient(90deg,rgba(52,152,219,0.06),rgba(231,76,60,0.03));border-color:var(--accent)}
+.upload-actions{display:flex;gap:10px;align-items:center}
+.btn{display:inline-flex;align-items:center;gap:8px;padding:10px 14px;border-radius:8px;border:none;cursor:pointer;font-weight:600}
+.btn-primary{background:var(--accent);color:#fff}
+.btn-secondary{background:#111827;color:#fff}
+.grid{display:grid;grid-template-columns:1fr 360px;gap:18px;margin-top:18px}
+.preview{display:flex;flex-direction:column;gap:8px;align-items:center}
+.preview canvas{max-width:100%;max-height:360px;border-radius:8px;background:#f3f4f6}
+.small{font-size:13px;color:var(--muted)}
+footer{margin-top:20px;text-align:center;color:var(--muted);font-size:13px}
+@media(max-width:900px){.grid{grid-template-columns:1fr}.preview canvas{max-height:300px}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="header">
+    <div class="logo">
+      <img src="iloveimg-logo.svg" alt="logo">
+      <div>
+        <h1>Photo Edit</h1>
+        <p class="lead">Background Blur + Rotate/Flip — iLoveIMG style.</p>
+      </div>
+    </div>
+    <div class="actions">
+      <a class="btn btn-secondary" href="Index.html"><i class="fa fa-arrow-left"></i> Back</a>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="upload-box" id="uploadBox">
+      <div style="text-align:center">
+        <i class="fa fa-cloud-upload" style="font-size:36px;color:var(--accent)"></i>
+        <h3 style="margin:8px 0 6px">Drag & drop or select an image</h3>
+        <p class="small muted">JPG, PNG, WebP — max 25MB (demo)</p>
+      </div>
+      <div class="upload-actions">
+        <button id="selectBtn" class="btn btn-primary"><i class="fa fa-folder-open"></i> Select Image</button>
+        <input id="fileInput" type="file" accept="image/*" style="display:none">
+      </div>
+    </div>
+
+    <div class="grid" style="margin-top:18px">
+      <div class="card">
+        <div class="preview">
+          <canvas id="canvas"></canvas>
+          <div id="placeholder" style="padding:26px;text-align:center;color:var(--muted)">Preview will appear here</div>
+        </div>
+      </div>
+
+      <aside class="card">
+        <strong>Filters & Background Blur</strong>
+        <div style="margin-top:10px">
+          <label class="small">Background Blur</label>
+          <input type="range" id="bgBlur" min="0" max="20" value="5">
+          <label class="small">Brightness</label>
+          <input type="range" id="brightness" min="0" max="200" value="100">
+          <label class="small">Contrast</label>
+          <input type="range" id="contrast" min="0" max="200" value="100">
+          <label class="small">Saturation</label>
+          <input type="range" id="saturate" min="0" max="200" value="100">
+        </div>
+        <div style="margin-top:12px;display:flex;gap:8px;flex-wrap:wrap">
+          <button id="bwBtn" class="btn"><i class="fa fa-adjust"></i> B/W</button>
+          <button id="sepiaBtn" class="btn"><i class="fa fa-fire"></i> Sepia</button>
+          <button id="rotateBtn" class="btn"><i class="fa fa-rotate"></i> Rotate</button>
+          <button id="flipBtn" class="btn"><i class="fa fa-arrows-left-right"></i> Flip</button>
+          <button id="resetBtn" class="btn"><i class="fa fa-undo"></i> Reset</button>
+        </div>
+        <div style="margin-top:12px">
+          <button id="applyBtn" class="btn btn-primary"><i class="fa fa-check"></i> Apply Filters</button>
+        </div>
+        <div style="margin-top:10px">
+          <button id="downloadBtn" class="btn btn-secondary"><i class="fa fa-download"></i> Download</button>
+        </div>
+      </aside>
+    </div>
+  </div>
+
+  <footer>
+    <p>&copy; 2025 iLoveIMG Clone — Photo Edit Tool</p>
+  </footer>
+</div>
+
+<script>
+const fileInput=document.getElementById('fileInput');
+const selectBtn=document.getElementById('selectBtn');
+const uploadBox=document.getElementById('uploadBox');
+const canvas=document.getElementById('canvas');
+const ctx=canvas.getContext('2d');
+const placeholder=document.getElementById('placeholder');
+
+let img=new Image();
+let filters={bw:false,sepia:false};
+let adjustments={brightness:100,contrast:100,saturate:100,bgBlur:5};
+let rotation=0;
+let flipped=false;
+
+selectBtn.onclick=()=>fileInput.click();
+fileInput.onchange=e=>loadFile(e.target.files[0]);
+['dragenter','dragover'].forEach(ev=>uploadBox.addEventListener(ev,e=>{e.preventDefault();uploadBox.classList.add('highlight');}));
+['dragleave','drop'].forEach(ev=>uploadBox.addEventListener(ev,e=>{e.preventDefault();uploadBox.classList.remove('highlight');}));
+uploadBox.addEventListener('drop',e=>loadFile(e.dataTransfer.files[0]));
+
+function loadFile(file){
+ if(!file||!file.type.startsWith('image/'))return alert('Please select an image.');
+ const reader=new FileReader();
+ reader.onload=()=>{img.src=reader.result};
+ reader.readAsDataURL(file);
+ img.onload=()=>{canvas.width=img.width;canvas.height=img.height;draw();placeholder.style.display='none';};
+}
+
+function buildFilter(){
+ let f='';
+ if(filters.bw) f+='grayscale(100%) ';
+ if(filters.sepia) f+='sepia(100%) ';
+ return `brightness(${adjustments.brightness}%) contrast(${adjustments.contrast}%) saturate(${adjustments.saturate}%) ${f}`;
+}
+
+function draw(){
+ ctx.clearRect(0,0,canvas.width,canvas.height);
+ // draw background blur
+ ctx.save();
+ ctx.filter=`blur(${adjustments.bgBlur}px)`;
+ ctx.drawImage(img,0,0);
+ ctx.restore();
+ // draw foreground
+ ctx.save();
+ ctx.filter=buildFilter();
+ ctx.translate(canvas.width/2,canvas.height/2);
+ ctx.rotate(rotation*Math.PI/180);
+ ctx.scale(flipped?-1:1,1);
+ ctx.drawImage(img,-img.width/2,-img.height/2);
+ ctx.restore();
+}
+
+// sliders
+['brightness','contrast','saturate','bgBlur'].forEach(id=>{
+ document.getElementById(id).oninput=e=>{
+   adjustments[id]=e.target.value;
+   draw();
+ };
+});
+
+// buttons
+document.getElementById('bwBtn').onclick=()=>{filters.bw=!filters.bw;draw();};
+document.getElementById('sepiaBtn').onclick=()=>{filters.sepia=!filters.sepia;draw();};
+document.getElementById('rotateBtn').onclick=()=>{rotation=(rotation+90)%360;draw();};
+document.getElementById('flipBtn').onclick=()=>{flipped=!flipped;draw();};
+document.getElementById('resetBtn').onclick=()=>{
+ filters={bw:false,sepia:false};
+ adjustments={brightness:100,contrast:100,saturate:100,bgBlur:5};
+ rotation=0; flipped=false;
+ ['brightness','contrast','saturate','bgBlur'].forEach(id=>document.getElementById(id).value=adjustments[id]);
+ draw();
+};
+document.getElementById('applyBtn').onclick=()=>draw();
+document.getElementById('downloadBtn').onclick=()=>{
+ const a=document.createElement('a');
+ a.download='edited.jpg';
+ a.href=canvas.toDataURL('image/jpeg',0.9);
+ a.click();
+};
+</script>
+</body>
+</html>

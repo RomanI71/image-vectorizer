@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>WEBP to JPG Converter — Free Online Tool</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
+
+  <style>
+    :root {
+      --bg: #f8fafc;
+      --card: #fff;
+      --accent: #3498db;
+      --muted: #6b7280;
+      --border: #e5e7eb;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+      background: var(--bg);
+      color: #0f172a;
+      line-height: 1.6;
+    }
+    .wrap { max-width: 980px; margin: 36px auto; padding: 20px; }
+    .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 18px; }
+    .logo { display: flex; gap: 12px; align-items: center; }
+    h1 { font-size: 20px; margin: 0; }
+    p.lead { color: var(--muted); margin: 6px 0 0; }
+    .card { background: var(--card); border-radius: 12px; padding: 20px; box-shadow: 0 6px 20px rgba(2,6,23,0.06); margin-bottom: 18px; }
+    .upload-box {
+      border: 2px dashed rgba(15,23,42,0.08);
+      border-radius: 10px;
+      padding: 28px;
+      display: flex;
+      gap: 20px;
+      align-items: center;
+      justify-content: center;
+      flex-direction: column;
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+    .upload-box:hover, .upload-box.highlight { background: linear-gradient(90deg, rgba(52,152,219,0.06), rgba(231,76,60,0.03)); border-color: var(--accent); }
+    .btn {
+      display: inline-flex; align-items: center; gap: 8px;
+      padding: 10px 14px; border-radius: 8px; border: none; cursor: pointer; font-weight: 600; transition: all 0.2s ease;
+    }
+    .btn:hover { transform: translateY(-2px); box-shadow: 0 4px 8px rgba(0,0,0,0.1); }
+    .btn-primary { background: var(--accent); color: #fff; }
+    .btn-secondary { background: #111827; color: #fff; }
+    .grid { display: grid; grid-template-columns: 1fr 360px; gap: 18px; margin-top: 18px; }
+    footer { text-align: center; margin-top: 20px; color: var(--muted); font-size: 13px; }
+    img { max-width: 100%; border-radius: 10px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); }
+    .progress { height: 8px; background: #eef2f7; border-radius: 8px; overflow: hidden; margin: 10px 0; }
+    .progress > i { display: block; height: 100%; width: 0; background: linear-gradient(90deg, var(--accent), #f39c12); transition: width 0.3s ease; }
+    .placeholder { color: var(--muted); text-align: center; padding: 40px 20px; border: 1px dashed var(--border); border-radius: 8px; background-color: rgba(0,0,0,0.02); }
+    .preview-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); gap: 10px; margin-top: 10px; }
+    .preview-grid img { width: 100%; border-radius: 8px; }
+    @media (max-width:900px) { .grid { grid-template-columns: 1fr; } .header { flex-direction: column; align-items: flex-start; gap: 15px; } }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="header">
+      <div class="logo">
+        <i class="fa fa-image" style="font-size:28px;color:var(--accent)"></i>
+        <div>
+          <h1>WEBP to JPG Converter</h1>
+          <p class="lead">Convert multiple WEBP images to JPG instantly — Free online tool.</p>
+        </div>
+      </div>
+      <a class="btn btn-secondary" href="index.html"><i class="fa fa-arrow-left"></i> Back</a>
+    </div>
+
+    <div class="card">
+      <div class="upload-box" id="uploadBox">
+        <div style="text-align:center">
+          <i class="fa fa-cloud-arrow-up" style="font-size:36px;color:var(--accent)"></i>
+          <h3>Drag & drop or select WEBP images</h3>
+          <p class="muted">Supported: WEBP — Max 25MB each</p>
+        </div>
+        <button id="selectBtn" class="btn btn-primary"><i class="fa fa-folder-open"></i> Select WEBP Files</button>
+        <input id="fileInput" type="file" accept=".webp,image/webp" multiple style="display:none">
+      </div>
+
+      <div class="grid" style="margin-top:18px">
+        <div>
+          <div class="card">
+            <h3>Original Images</h3>
+            <div class="progress"><i id="bar"></i></div>
+            <div id="inputPreview" class="preview-grid"></div>
+          </div>
+        </div>
+
+        <aside class="card">
+          <h3>Converted (JPG)</h3>
+          <div id="outputPreview" class="preview-grid"></div>
+          <button id="convertBtn" class="btn btn-primary" style="margin-top:12px;width:100%;"><i class="fa fa-sync"></i> Convert to JPG</button>
+          <button id="downloadBtn" class="btn btn-secondary" style="margin-top:8px;width:100%;display:none;"><i class="fa fa-download"></i> Download ZIP</button>
+        </aside>
+      </div>
+    </div>
+
+    <footer>&copy; 2025 iLoveIMG Clone — WEBP to JPG Converter</footer>
+  </div>
+
+  <script>
+    const fileInput = document.getElementById('fileInput');
+    const selectBtn = document.getElementById('selectBtn');
+    const uploadBox = document.getElementById('uploadBox');
+    const inputPreview = document.getElementById('inputPreview');
+    const outputPreview = document.getElementById('outputPreview');
+    const convertBtn = document.getElementById('convertBtn');
+    const downloadBtn = document.getElementById('downloadBtn');
+    const bar = document.getElementById('bar');
+
+    let files = [];
+    let zip = new JSZip();
+
+    // Select Files
+    selectBtn.onclick = () => fileInput.click();
+
+    uploadBox.addEventListener('dragover', e => { e.preventDefault(); uploadBox.classList.add('highlight'); });
+    uploadBox.addEventListener('dragleave', () => uploadBox.classList.remove('highlight'));
+    uploadBox.addEventListener('drop', e => {
+      e.preventDefault();
+      uploadBox.classList.remove('highlight');
+      if (e.dataTransfer.files.length) handleFiles(e.dataTransfer.files);
+    });
+
+    fileInput.onchange = e => handleFiles(e.target.files);
+
+    function handleFiles(selectedFiles) {
+      files = Array.from(selectedFiles);
+      if (!files.length) return;
+      inputPreview.innerHTML = '';
+      outputPreview.innerHTML = '';
+      files.forEach(f => {
+        if (!f.name.toLowerCase().endsWith('.webp')) return;
+        const img = document.createElement('img');
+        img.src = URL.createObjectURL(f);
+        inputPreview.appendChild(img);
+      });
+      downloadBtn.style.display = 'none';
+    }
+
+    // Convert button
+    convertBtn.onclick = async () => {
+      if (!files.length) return alert('Please select WEBP files first!');
+      bar.style.width = '10%';
+      outputPreview.innerHTML = '';
+      zip = new JSZip();
+
+      let converted = 0;
+      for (const file of files) {
+        const dataUrl = await fileToDataURL(file);
+        const img = await loadImage(dataUrl);
+        const blob = await canvasToJPG(img);
+        const jpgName = file.name.replace(/\.webp$/i, '.jpg');
+        zip.file(jpgName, blob);
+        const url = URL.createObjectURL(blob);
+        const imgEl = document.createElement('img');
+        imgEl.src = url;
+        outputPreview.appendChild(imgEl);
+        converted++;
+        bar.style.width = `${(converted/files.length)*100}%`;
+      }
+
+      setTimeout(() => bar.style.width = '0%', 1000);
+      downloadBtn.style.display = 'block';
+    };
+
+    function fileToDataURL(file) {
+      return new Promise((res, rej) => {
+        const r = new FileReader();
+        r.onload = () => res(r.result);
+        r.onerror = rej;
+        r.readAsDataURL(file);
+      });
+    }
+    function loadImage(src) {
+      return new Promise((res, rej) => {
+        const img = new Image();
+        img.onload = () => res(img);
+        img.onerror = rej;
+        img.src = src;
+      });
+    }
+    function canvasToJPG(img) {
+      return new Promise(res => {
+        const canvas = document.createElement('canvas');
+        canvas.width = img.width;
+        canvas.height = img.height;
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(img, 0, 0);
+        canvas.toBlob(b => res(b), 'image/jpeg', 0.9);
+      });
+    }
+
+    // Download ZIP
+    downloadBtn.onclick = async () => {
+      const zipBlob = await zip.generateAsync({ type: "blob" });
+      saveAs(zipBlob, "converted_webp_to_jpg.zip");
+    };
+  </script>
+</body>
+</html>

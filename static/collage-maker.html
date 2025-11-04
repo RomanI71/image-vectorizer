@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Image Collage Maker — iLoveIMG Style</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<style>
+:root{--bg:#f8fafc;--card:#fff;--accent:#3498db;--muted:#6b7280;--border:#e5e7eb;}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:Inter,system-ui,-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;background:var(--bg);color:#0f172a;line-height:1.5;}
+.wrap{max-width:900px;margin:36px auto;padding:18px;}
+.header{display:flex;justify-content:space-between;align-items:center;margin-bottom:18px;}
+.logo{display:flex;gap:12px;align-items:center;}
+h1{font-size:20px;margin:0;}
+p.lead{color:var(--muted);margin-top:6px;}
+.card{background:var(--card);border-radius:12px;padding:18px;box-shadow:0 6px 20px rgba(2,6,23,0.06);}
+.upload-box{border:2px dashed rgba(15,23,42,0.08);border-radius:10px;padding:24px;display:flex;flex-direction:column;align-items:center;gap:12px;cursor:pointer;transition:all .2s;}
+.upload-box:hover{background:linear-gradient(90deg, rgba(52,152,219,0.04), rgba(0,0,0,0.01));}
+.btn{display:inline-flex;align-items:center;gap:8px;padding:10px 14px;border-radius:8px;border:none;cursor:pointer;font-weight:600;font-size:14px;}
+.btn-primary{background:var(--accent);color:#fff;}
+.btn-secondary{background:#111827;color:#fff;}
+.preview-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(100px,1fr));gap:12px;margin-top:12px;}
+.preview-item{background:#fafafa;padding:10px;border-radius:10px; text-align:center; box-shadow:0 2px 8px rgba(0,0,0,0.04);}
+.preview-item img{width:100%;border-radius:8px;}
+.status{font-size:13px;color:var(--muted);margin-top:8px;text-align:center;}
+canvas{max-width:100%;border-radius:10px;}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="header">
+    <div class="logo">
+      <i class="fa fa-images" style="font-size:28px;color:var(--accent)"></i>
+      <div>
+        <h1>Image Collage Maker</h1>
+        <p class="lead">Create a collage from multiple images easily</p>
+      </div>
+    </div>
+    <!-- Back button added -->
+    <a class="btn btn-secondary" href="index.html"><i class="fa fa-arrow-left"></i> Back</a>
+  </div>
+
+  <div class="card">
+    <div class="upload-box" id="uploadBox">
+      <i class="fa fa-cloud-arrow-up" style="font-size:34px;color:var(--accent)"></i>
+      <h3>Drag & drop or select images</h3>
+      <p class="status">Max 20 images, each ≤ 5MB</p>
+      <button id="selectBtn" class="btn btn-primary"><i class="fa fa-folder-open"></i> Select Files</button>
+      <input id="fileInput" type="file" accept="image/*" multiple style="display:none">
+    </div>
+
+    <div class="preview-grid" id="preview"></div>
+
+    <div style="margin-top:16px; display:flex; gap:12px; flex-wrap:wrap; justify-content:center;">
+      <button id="generateBtn" class="btn btn-primary"><i class="fa fa-th-large"></i> Generate Collage</button>
+      <button id="clearBtn" class="btn btn-secondary"><i class="fa fa-trash"></i> Clear</button>
+    </div>
+
+    <div class="status" id="status"></div>
+  </div>
+</div>
+
+<script>
+const fileInput=document.getElementById('fileInput');
+const selectBtn=document.getElementById('selectBtn');
+const uploadBox=document.getElementById('uploadBox');
+const preview=document.getElementById('preview');
+const generateBtn=document.getElementById('generateBtn');
+const clearBtn=document.getElementById('clearBtn');
+const status=document.getElementById('status');
+
+let files=[];
+
+selectBtn.onclick=()=>fileInput.click();
+uploadBox.addEventListener('dragover',e=>{e.preventDefault();});
+uploadBox.addEventListener('drop',e=>{e.preventDefault();handleFiles(e.dataTransfer.files);});
+fileInput.onchange=e=>handleFiles(e.target.files);
+
+function handleFiles(selectedFiles){
+  files=Array.from(selectedFiles).slice(0,20);
+  preview.innerHTML=''; status.textContent='';
+  files.forEach(f=>{
+    const div=document.createElement('div'); div.className='preview-item';
+    const img=document.createElement('img'); img.src=URL.createObjectURL(f);
+    img.alt=f.name;
+    div.appendChild(img);
+    preview.appendChild(div);
+  });
+}
+
+generateBtn.onclick=async()=>{
+  if(!files.length) return alert('Select images first!');
+  status.textContent='Generating collage...';
+  const imgs=[];
+  for(let f of files){
+    imgs.push(await loadImage(f));
+  }
+  const cols=Math.ceil(Math.sqrt(imgs.length));
+  const rows=Math.ceil(imgs.length/cols);
+  const tileWidth=150;
+  const tileHeight=150;
+  const canvas=document.createElement('canvas');
+  canvas.width=cols*tileWidth;
+  canvas.height=rows*tileHeight;
+  const ctx=canvas.getContext('2d');
+
+  let index=0;
+  for(let y=0;y<rows;y++){
+    for(let x=0;x<cols;x++){
+      if(index>=imgs.length) break;
+      ctx.drawImage(imgs[index],0,0,imgs[index].width,imgs[index].height,
+                    x*tileWidth,y*tileHeight,tileWidth,tileHeight);
+      index++;
+    }
+  }
+
+  preview.innerHTML='';
+  const div=document.createElement('div'); div.className='preview-item';
+  div.appendChild(canvas);
+
+  const dlBtn=document.createElement('button'); dlBtn.className='btn btn-primary'; dlBtn.style.marginTop='6px';
+  dlBtn.innerHTML='<i class="fa fa-download"></i> Download Collage';
+  dlBtn.onclick=()=>downloadCanvas(canvas,'collage.jpg');
+  div.appendChild(dlBtn);
+
+  preview.appendChild(div);
+  status.textContent='Collage generated!';
+};
+
+clearBtn.onclick=()=>{
+  files=[]; preview.innerHTML=''; status.textContent=''; fileInput.value='';
+};
+
+function loadImage(file){
+  return new Promise((res,rej)=>{
+    const reader=new FileReader();
+    reader.onload=()=>{
+      const img=new Image();
+      img.onload=()=>res(img);
+      img.onerror=rej;
+      img.src=reader.result;
+    };
+    reader.onerror=rej;
+    reader.readAsDataURL(file);
+  });
+}
+
+function downloadCanvas(canvas,filename){
+  canvas.toBlob(blob=>{
+    const a=document.createElement('a');
+    a.href=URL.createObjectURL(blob);
+    a.download=filename;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+  },'image/jpeg',0.95);
+}
+</script>
+</body>
+</html>
