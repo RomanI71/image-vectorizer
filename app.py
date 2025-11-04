@@ -17,7 +17,7 @@ import logging
 import logging.handlers
 import traceback
 import base64 # Added for SVG embedding
-import re     # Added for hex color validation
+import re # Added for hex color validation
 
 # -------- AI Models -------- #
 # try:
