@@ -27,7 +27,7 @@ import re     # Added for hex color validation
 # except ImportError:
 #     REMBG_AVAILABLE = False
 #     print("❌ Rembg not available, using fallback methods")
-
+REMBG_AVAILABLE = False
 # ----------------- Logging Setup ----------------- #
 log_folder = 'logs'
 os.makedirs(log_folder, exist_ok=True)
